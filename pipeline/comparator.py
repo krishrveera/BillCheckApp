@@ -11,20 +11,56 @@ from collections import defaultdict
 from models import PatientBill, VerificationIssue, IssueSeverity, IssueType
 from reference_data import (
     CMS_FEE_SCHEDULE,
+    CMS_FEE_SCHEDULE_FALLBACK,
     NCCI_LOOKUP,
     ICD10_PLAUSIBLE_CPTS,
     CMS_OVERCHARGE_MULTIPLIER,
     CMS_SEVERE_OVERCHARGE_MULTIPLIER,
 )
+from pipeline.cms_api import build_fee_schedule
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _build_live_fee_schedule(bill: PatientBill) -> dict[str, dict]:
+    """
+    Build a fee schedule for every CPT code on this bill.
+
+    1. Try the CMS data.cms.gov API (cached on disk for 7 days).
+    2. Fall back to the hardcoded CMS_FEE_SCHEDULE_FALLBACK for any
+       code not returned by the API.
+    """
+    codes = list({item.cpt_code for item in bill.line_items})
+    try:
+        schedule = build_fee_schedule(
+            codes, fallback=CMS_FEE_SCHEDULE_FALLBACK, use_cache=True
+        )
+        api_count = sum(1 for v in schedule.values() if v.get("source") == "cms_api")
+        fb_count = sum(1 for v in schedule.values() if v.get("source") == "fallback")
+        logger.info(
+            "Fee schedule: %d codes from CMS API, %d from fallback",
+            api_count, fb_count,
+        )
+    except Exception:
+        logger.warning("CMS API unavailable — using fallback fee schedule")
+        schedule = {
+            c: {**CMS_FEE_SCHEDULE_FALLBACK[c], "source": "fallback"}
+            for c in codes
+            if c in CMS_FEE_SCHEDULE_FALLBACK
+        }
+    return schedule
 
 
 def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
     """Run all 6 deterministic verification engines against a bill."""
+    fee_schedule = _build_live_fee_schedule(bill)
     issues = []
     issues.extend(_check_duplicates(bill))
     issues.extend(_check_dates(bill))
     issues.extend(_check_math(bill))
-    issues.extend(_check_cms_benchmarks(bill))
+    issues.extend(_check_cms_benchmarks(bill, fee_schedule))
     issues.extend(_check_unbundling(bill))
     issues.extend(_check_plausibility(bill))
     return issues
@@ -132,15 +168,21 @@ def _check_math(bill: PatientBill) -> list[VerificationIssue]:
     return issues
 
 
-def _check_cms_benchmarks(bill: PatientBill) -> list[VerificationIssue]:
-    """Engine 4: Compare charges against CMS Medicare fee schedule."""
+def _check_cms_benchmarks(
+    bill: PatientBill,
+    fee_schedule: dict[str, dict] | None = None,
+) -> list[VerificationIssue]:
+    """Engine 4: Compare charges against CMS Medicare fee schedule (live API + fallback)."""
     issues = []
+    schedule = fee_schedule or CMS_FEE_SCHEDULE
 
     for idx, item in enumerate(bill.line_items):
-        if item.cpt_code not in CMS_FEE_SCHEDULE:
+        if item.cpt_code not in schedule:
             continue
 
-        medicare_rate = CMS_FEE_SCHEDULE[item.cpt_code]["medicare_rate"]
+        entry = schedule[item.cpt_code]
+        medicare_rate = entry["medicare_rate"]
+        source_tag = "CMS API" if entry.get("source") == "cms_api" else "fallback"
         unit_charge = item.charge_amount  # charge per unit
         ratio = unit_charge / medicare_rate if medicare_rate > 0 else 0
 
@@ -151,7 +193,7 @@ def _check_cms_benchmarks(bill: PatientBill) -> list[VerificationIssue]:
                 cpt_code=item.cpt_code,
                 description=f"Severe overcharge: {item.description}",
                 details=f"{item.cpt_code} charged at ${unit_charge:,.2f} vs Medicare rate "
-                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup)",
+                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup) [source: {source_tag}]",
                 potential_overcharge=unit_charge - medicare_rate,
                 line_item_index=idx,
             ))
@@ -162,7 +204,7 @@ def _check_cms_benchmarks(bill: PatientBill) -> list[VerificationIssue]:
                 cpt_code=item.cpt_code,
                 description=f"Significant overcharge: {item.description}",
                 details=f"{item.cpt_code} charged at ${unit_charge:,.2f} vs Medicare rate "
-                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup)",
+                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup) [source: {source_tag}]",
                 potential_overcharge=unit_charge - medicare_rate,
                 line_item_index=idx,
             ))

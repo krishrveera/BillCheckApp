@@ -1,4 +1,7 @@
-CMS_FEE_SCHEDULE = {
+# ── Static fallback fee schedule ────────────────────────────────────────
+# Used ONLY when the CMS API (pipeline/cms_api.py) is unreachable.
+# Rates approximate CMS Medicare national averages.
+CMS_FEE_SCHEDULE_FALLBACK = {
     # E&M - Office visits
     "99211": {"description": "Office visit, minimal", "medicare_rate": 23.0, "category": "E&M"},
     "99212": {"description": "Office visit, straightforward", "medicare_rate": 56.0, "category": "E&M"},
@@ -288,6 +291,9 @@ ICD10_PLAUSIBLE_CPTS: dict[str, dict] = {
     },
 }
 
+
+# Back-compat alias — comparator.py now uses build_live_fee_schedule()
+CMS_FEE_SCHEDULE = CMS_FEE_SCHEDULE_FALLBACK
 
 CMS_OVERCHARGE_MULTIPLIER = 15.0
 CMS_SEVERE_OVERCHARGE_MULTIPLIER = 25.0
