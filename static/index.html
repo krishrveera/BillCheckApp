@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BillCheck — Deterministic Medical Bill Verification</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e17;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2.5rem; color: #f8fafc; letter-spacing: -1px; }
+        .header h1 span { color: #22d3ee; }
+        .header p { color: #94a3b8; margin-top: 8px; font-size: 1.05rem; }
+        .header .differentiator {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 6px 16px;
+            background: rgba(34, 211, 238, 0.1);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #22d3ee;
+        }
+
+        /* Patient Cards */
+        .patients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .patient-card {
+            background: #131a2b;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .patient-card:hover { border-color: #22d3ee; transform: translateY(-2px); }
+        .patient-card.selected { border-color: #22d3ee; background: #0f1829; }
+        .patient-card h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .patient-card .mrn { color: #64748b; font-size: 0.85rem; margin-bottom: 12px; }
+        .patient-card .details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9rem; }
+        .patient-card .detail-label { color: #64748b; }
+        .patient-card .detail-value { color: #cbd5e1; }
+        .patient-card .total { font-size: 1.3rem; color: #f8fafc; font-weight: 700; margin-top: 12px; }
+        .error-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        /* Verify Button */
+        .verify-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #0891b2, #22d3ee);
+            color: #0a0e17;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .verify-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3); }
+        .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .verify-btn.loading { animation: pulse 1.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+        /* Score Dashboard */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .dash-card {
+            background: #131a2b;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .dash-card .label { color: #64748b; font-size: 0.85rem; margin-bottom: 6px; }
+        .dash-card .value { font-size: 2rem; font-weight: 700; }
+        .dash-card .sub { color: #64748b; font-size: 0.8rem; margin-top: 4px; }
+        .score-a { color: #22c55e; }
+        .score-b { color: #84cc16; }
+        .score-c { color: #eab308; }
+        .score-d { color: #f97316; }
+        .score-f { color: #ef4444; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: #0f1520;
+            color: #64748b;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab:hover { color: #e2e8f0; }
+        .tab.active { background: #131a2b; color: #22d3ee; border-bottom: 2px solid #22d3ee; }
+
+        /* Tab Content */
+        .tab-content {
+            background: #131a2b;
+            border: 1px solid #1e293b;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 24px;
+            min-height: 300px;
+        }
+
+        /* Issues Table */
+        .issues-table { width: 100%; border-collapse: collapse; }
+        .issues-table th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .issues-table td { padding: 12px; border-bottom: 1px solid #1a2235; vertical-align: top; }
+        .issues-table tr:hover { background: rgba(34, 211, 238, 0.03); }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .severity-critical { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .severity-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .severity-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+        .issue-details { color: #94a3b8; font-size: 0.85rem; margin-top: 4px; }
+        .flagged-amount { color: #f87171; font-weight: 600; }
+
+        /* Bill Table */
+        .bill-table { width: 100%; border-collapse: collapse; }
+        .bill-table th {
+            text-align: left;
+            padding: 10px 12px;
+            color: #64748b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1e293b;
+        }
+        .bill-table td { padding: 10px 12px; border-bottom: 1px solid #1a2235; }
+        .bill-table tr.flagged { background: rgba(239, 68, 68, 0.08); }
+        .bill-table tr.flagged td:first-child { border-left: 3px solid #ef4444; }
+
+        /* Preformatted text */
+        .preformatted {
+            white-space: pre-wrap;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+            background: #0a0e17;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Answer Key */
+        .answer-key { list-style: none; padding: 0; }
+        .answer-key li {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #fbbf24;
+        }
+        .answer-key li::before { content: "🎯 "; }
+
+        /* Loading */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #1e293b;
+            border-top-color: #22d3ee;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Pipeline diagram */
+        .pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .pipeline-step {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .pipeline-step.ai { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa; }
+        .pipeline-step.deterministic { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.3); color: #22d3ee; }
+        .pipeline-arrow { color: #475569; font-size: 1.2rem; }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: repeat(2, 1fr); }
+            .patients-grid { grid-template-columns: 1fr; }
+            .tabs { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [patients, setPatients] = useState([]);
+            const [selectedId, setSelectedId] = useState(null);
+            const [report, setReport] = useState(null);
+            const [knownErrors, setKnownErrors] = useState([]);
+            const [latency, setLatency] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [activeTab, setActiveTab] = useState('issues');
+            const [patientBill, setPatientBill] = useState(null);
+
+            useEffect(() => {
+                fetch('/api/patients')
+                    .then(r => r.json())
+                    .then(data => setPatients(data.patients));
+            }, []);
+
+            const selectPatient = (id) => {
+                setSelectedId(id);
+                setReport(null);
+                setLatency(null);
+                setActiveTab('issues');
+                fetch(`/api/patients/${id}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        setPatientBill(data.bill);
+                        setKnownErrors(data.known_errors);
+                    });
+            };
+
+            const runVerification = async () => {
+                if (!selectedId) return;
+                setLoading(true);
+                try {
+                    const res = await fetch(`/api/verify/${selectedId}`, { method: 'POST' });
+                    const data = await res.json();
+                    setReport(data.report);
+                    setKnownErrors(data.known_errors);
+                    setLatency(data.latency_ms);
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const gradeClass = (grade) => {
+                const map = { A: 'score-a', B: 'score-b', C: 'score-c', D: 'score-d', F: 'score-f' };
+                return map[grade] || '';
+            };
+
+            const criticalCount = report ? report.issues.filter(i => i.severity === 'critical').length : 0;
+            const warningCount = report ? report.issues.filter(i => i.severity === 'warning').length : 0;
+
+            const flaggedIndices = report ? new Set(report.issues.map(i => i.line_item_index).filter(i => i !== null)) : new Set();
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>Bill<span>Check</span></h1>
+                        <p>Deterministic Medical Bill Verification</p>
+                        <div className="differentiator">
+                            LLM extracts the bill &bull; Pure logic checks the rules &bull; Verification cannot hallucinate
+                        </div>
+                        <div className="pipeline">
+                            <span className="pipeline-step ai">LLM Extraction</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">Duplicates</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">Dates</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">Math</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">CMS Rates</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">Unbundling</span>
+                            <span className="pipeline-arrow">&rarr;</span>
+                            <span className="pipeline-step deterministic">Plausibility</span>
+                        </div>
+                    </div>
+
+                    <div className="patients-grid">
+                        {patients.map(p => (
+                            <div
+                                key={p.id}
+                                className={`patient-card ${selectedId === p.id ? 'selected' : ''}`}
+                                onClick={() => selectPatient(p.id)}
+                            >
+                                <h3>{p.name}</h3>
+                                <div className="mrn">MRN: {p.mrn} &bull; {p.facility}</div>
+                                <div className="details">
+                                    <div>
+                                        <div className="detail-label">Admitted</div>
+                                        <div className="detail-value">{p.admission_date}</div>
+                                    </div>
+                                    <div>
+                                        <div className="detail-label">Discharged</div>
+                                        <div className="detail-value">{p.discharge_date}</div>
+                                    </div>
+                                    <div>
+                                        <div className="detail-label">Diagnosis</div>
+                                        <div className="detail-value">{p.primary_diagnosis}</div>
+                                    </div>
+                                    <div>
+                                        <div className="detail-label">Line Items</div>
+                                        <div className="detail-value">{p.line_items_count}</div>
+                                    </div>
+                                </div>
+                                <div className="total">${p.total_billed.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                <div className="error-badge">{p.known_error_count} known errors embedded</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        className={`verify-btn ${loading ? 'loading' : ''}`}
+                        onClick={runVerification}
+                        disabled={!selectedId || loading}
+                    >
+                        {loading ? (<><span className="spinner"></span>Running 6 Deterministic Engines...</>) : 'Verify Selected Bill'}
+                    </button>
+
+                    {report && (
+                        <>
+                            <div className="dashboard">
+                                <div className="dash-card">
+                                    <div className="label">Safety Score</div>
+                                    <div className={`value ${gradeClass(report.grade)}`}>{report.safety_score}</div>
+                                    <div className="sub">Grade: {report.grade}</div>
+                                </div>
+                                <div className="dash-card">
+                                    <div className="label">Issues Found</div>
+                                    <div className="value" style={{color: '#f87171'}}>{report.issues.length}</div>
+                                    <div className="sub">{criticalCount} critical, {warningCount} warnings</div>
+                                </div>
+                                <div className="dash-card">
+                                    <div className="label">Total Flagged</div>
+                                    <div className="value flagged-amount">${report.total_flagged.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                    <div className="sub">potential overcharges</div>
+                                </div>
+                                <div className="dash-card">
+                                    <div className="label">Verification Time</div>
+                                    <div className="value" style={{color: '#22d3ee'}}>{latency}ms</div>
+                                    <div className="sub">pure deterministic logic</div>
+                                </div>
+                            </div>
+
+                            <div className="tabs">
+                                {['issues', 'bill', 'dispute', 'phone', 'answer-key'].map(tab => (
+                                    <button
+                                        key={tab}
+                                        className={`tab ${activeTab === tab ? 'active' : ''}`}
+                                        onClick={() => setActiveTab(tab)}
+                                    >
+                                        {tab === 'issues' ? `Issues (${report.issues.length})` :
+                                         tab === 'bill' ? 'Full Bill' :
+                                         tab === 'dispute' ? 'Dispute Letter' :
+                                         tab === 'phone' ? 'Phone Script' :
+                                         'Answer Key'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="tab-content">
+                                {activeTab === 'issues' && (
+                                    <table className="issues-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Severity</th>
+                                                <th>CPT</th>
+                                                <th>Issue Type</th>
+                                                <th>Description</th>
+                                                <th>Flagged Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[...report.issues]
+                                                .sort((a, b) => {
+                                                    const order = { critical: 0, warning: 1, info: 2 };
+                                                    return order[a.severity] - order[b.severity];
+                                                })
+                                                .map((issue, idx) => (
+                                                <tr key={idx}>
+                                                    <td>
+                                                        <span className={`severity-badge severity-${issue.severity}`}>
+                                                            {issue.severity}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{fontFamily: 'monospace', color: '#94a3b8'}}>{issue.cpt_code}</td>
+                                                    <td style={{color: '#cbd5e1'}}>{issue.issue_type.replace(/_/g, ' ')}</td>
+                                                    <td>
+                                                        <div style={{color: '#e2e8f0'}}>{issue.description}</div>
+                                                        <div className="issue-details">{issue.details}</div>
+                                                    </td>
+                                                    <td className="flagged-amount">
+                                                        {issue.potential_overcharge > 0 ?
+                                                            `$${issue.potential_overcharge.toLocaleString('en-US', {minimumFractionDigits: 2})}` : '—'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+
+                                {activeTab === 'bill' && patientBill && (
+                                    <table className="bill-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Date</th>
+                                                <th>CPT</th>
+                                                <th>Description</th>
+                                                <th>Qty</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {patientBill.line_items.map((item, idx) => (
+                                                <tr key={idx} className={flaggedIndices.has(idx) ? 'flagged' : ''}>
+                                                    <td style={{color: '#64748b'}}>{idx + 1}</td>
+                                                    <td>{item.date_of_service}</td>
+                                                    <td style={{fontFamily: 'monospace'}}>{item.cpt_code}</td>
+                                                    <td>{item.description}</td>
+                                                    <td>{item.quantity}</td>
+                                                    <td style={{fontFamily: 'monospace'}}>
+                                                        ${(item.charge_amount * item.quantity).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            <tr style={{borderTop: '2px solid #1e293b'}}>
+                                                <td colSpan="5" style={{textAlign: 'right', fontWeight: 700, color: '#f8fafc'}}>
+                                                    TOTAL BILLED
+                                                </td>
+                                                <td style={{fontFamily: 'monospace', fontWeight: 700, color: '#f8fafc'}}>
+                                                    ${patientBill.total_billed.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                )}
+
+                                {activeTab === 'dispute' && (
+                                    <div className="preformatted">{report.dispute_letter}</div>
+                                )}
+
+                                {activeTab === 'phone' && (
+                                    <div className="preformatted">{report.phone_script}</div>
+                                )}
+
+                                {activeTab === 'answer-key' && (
+                                    <>
+                                        <p style={{color: '#94a3b8', marginBottom: 16, fontSize: '0.9rem'}}>
+                                            These are the intentional billing errors embedded in this synthetic bill for demo purposes.
+                                        </p>
+                                        <ul className="answer-key">
+                                            {knownErrors.map((err, idx) => (
+                                                <li key={idx}>{err}</li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    <div style={{textAlign: 'center', padding: '40px 0 20px', color: '#475569', fontSize: '0.85rem'}}>
+                        BillCheck &mdash; The LLM reads the bill. Pure logic checks the rules. The verification cannot hallucinate.
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

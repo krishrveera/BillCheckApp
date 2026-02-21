@@ -1,0 +1,259 @@
+"""
+THE CORE — 6 Deterministic Verification Engines
+
+NO LLM CALLS. Pure deterministic logic. This is the differentiator.
+Every flag maps to a specific rule, a specific CPT code, and a specific dollar amount.
+The verification CANNOT hallucinate because it is not an AI.
+"""
+
+from datetime import datetime
+from collections import defaultdict
+from models import PatientBill, VerificationIssue, IssueSeverity, IssueType
+from reference_data import (
+    CMS_FEE_SCHEDULE,
+    NCCI_LOOKUP,
+    ICD10_PLAUSIBLE_CPTS,
+    CMS_OVERCHARGE_MULTIPLIER,
+    CMS_SEVERE_OVERCHARGE_MULTIPLIER,
+)
+
+
+def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
+    """Run all 6 deterministic verification engines against a bill."""
+    issues = []
+    issues.extend(_check_duplicates(bill))
+    issues.extend(_check_dates(bill))
+    issues.extend(_check_math(bill))
+    issues.extend(_check_cms_benchmarks(bill))
+    issues.extend(_check_unbundling(bill))
+    issues.extend(_check_plausibility(bill))
+    return issues
+
+
+def _check_duplicates(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 1: Detect duplicate charges — same CPT code on same date."""
+    issues = []
+    groups: dict[tuple[str, str], list[int]] = defaultdict(list)
+
+    for idx, item in enumerate(bill.line_items):
+        key = (item.cpt_code, item.date_of_service)
+        groups[key].append(idx)
+
+    for (cpt, date), indices in groups.items():
+        if len(indices) > 1:
+            item = bill.line_items[indices[0]]
+            overcharge = item.charge_amount * (len(indices) - 1)
+            issues.append(VerificationIssue(
+                issue_type=IssueType.duplicate_charge,
+                severity=IssueSeverity.critical,
+                cpt_code=cpt,
+                description=f"Duplicate charge: {item.description}",
+                details=f"{cpt} ({item.description}) charged {len(indices)} times on {date}. "
+                        f"Each charge: ${item.charge_amount:,.2f}",
+                potential_overcharge=overcharge,
+                line_item_index=indices[1],
+            ))
+
+    return issues
+
+
+def _check_dates(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 2: Flag charges outside admission-discharge window."""
+    issues = []
+    try:
+        admission = datetime.strptime(bill.admission_date, "%Y-%m-%d").date()
+        discharge = datetime.strptime(bill.discharge_date, "%Y-%m-%d").date()
+    except ValueError:
+        return issues
+
+    for idx, item in enumerate(bill.line_items):
+        try:
+            service_date = datetime.strptime(item.date_of_service, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+
+        if service_date < admission:
+            days_before = (admission - service_date).days
+            issues.append(VerificationIssue(
+                issue_type=IssueType.date_outside_stay,
+                severity=IssueSeverity.critical,
+                cpt_code=item.cpt_code,
+                description=f"Charge before admission: {item.description}",
+                details=f"{item.cpt_code} ({item.description}) billed on {item.date_of_service}, "
+                        f"which is {days_before} day(s) BEFORE admission ({bill.admission_date})",
+                potential_overcharge=item.charge_amount * item.quantity,
+                line_item_index=idx,
+            ))
+        elif service_date > discharge:
+            days_after = (service_date - discharge).days
+            issues.append(VerificationIssue(
+                issue_type=IssueType.date_outside_stay,
+                severity=IssueSeverity.critical,
+                cpt_code=item.cpt_code,
+                description=f"Charge after discharge: {item.description}",
+                details=f"{item.cpt_code} ({item.description}) billed on {item.date_of_service}, "
+                        f"which is {days_after} day(s) AFTER discharge ({bill.discharge_date})",
+                potential_overcharge=item.charge_amount * item.quantity,
+                line_item_index=idx,
+            ))
+
+    return issues
+
+
+def _check_math(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 3: Verify total matches sum of line items."""
+    issues = []
+    computed_sum = sum(item.charge_amount * item.quantity for item in bill.line_items)
+    discrepancy = bill.total_billed - computed_sum
+
+    if abs(discrepancy) > 100:
+        issues.append(VerificationIssue(
+            issue_type=IssueType.math_error,
+            severity=IssueSeverity.critical,
+            cpt_code="N/A",
+            description="Math error: total does not match line items",
+            details=f"Billed total: ${bill.total_billed:,.2f}. "
+                    f"Sum of line items: ${computed_sum:,.2f}. "
+                    f"Discrepancy: ${discrepancy:,.2f}",
+            potential_overcharge=max(discrepancy, 0),
+        ))
+    elif abs(discrepancy) > 0.01:
+        issues.append(VerificationIssue(
+            issue_type=IssueType.math_error,
+            severity=IssueSeverity.warning,
+            cpt_code="N/A",
+            description="Minor math discrepancy in total",
+            details=f"Billed total: ${bill.total_billed:,.2f}. "
+                    f"Sum of line items: ${computed_sum:,.2f}. "
+                    f"Discrepancy: ${discrepancy:,.2f}",
+            potential_overcharge=max(discrepancy, 0),
+        ))
+
+    return issues
+
+
+def _check_cms_benchmarks(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 4: Compare charges against CMS Medicare fee schedule."""
+    issues = []
+
+    for idx, item in enumerate(bill.line_items):
+        if item.cpt_code not in CMS_FEE_SCHEDULE:
+            continue
+
+        medicare_rate = CMS_FEE_SCHEDULE[item.cpt_code]["medicare_rate"]
+        unit_charge = item.charge_amount  # charge per unit
+        ratio = unit_charge / medicare_rate if medicare_rate > 0 else 0
+
+        if ratio >= CMS_SEVERE_OVERCHARGE_MULTIPLIER:
+            issues.append(VerificationIssue(
+                issue_type=IssueType.cms_overcharge,
+                severity=IssueSeverity.critical,
+                cpt_code=item.cpt_code,
+                description=f"Severe overcharge: {item.description}",
+                details=f"{item.cpt_code} charged at ${unit_charge:,.2f} vs Medicare rate "
+                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup)",
+                potential_overcharge=unit_charge - medicare_rate,
+                line_item_index=idx,
+            ))
+        elif ratio >= CMS_OVERCHARGE_MULTIPLIER:
+            issues.append(VerificationIssue(
+                issue_type=IssueType.cms_overcharge,
+                severity=IssueSeverity.warning,
+                cpt_code=item.cpt_code,
+                description=f"Significant overcharge: {item.description}",
+                details=f"{item.cpt_code} charged at ${unit_charge:,.2f} vs Medicare rate "
+                        f"${medicare_rate:,.2f} ({ratio:.1f}x markup)",
+                potential_overcharge=unit_charge - medicare_rate,
+                line_item_index=idx,
+            ))
+
+    return issues
+
+
+def _check_unbundling(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 5: Detect NCCI unbundling violations — codes that should be bundled together."""
+    issues = []
+    flagged: set[tuple[str, str, str]] = set()
+
+    # Build per-date code sets with their indices
+    date_codes: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
+    for idx, item in enumerate(bill.line_items):
+        date_codes[item.date_of_service][item.cpt_code].append(idx)
+
+    for date, codes in date_codes.items():
+        for col1_code in codes:
+            if col1_code not in NCCI_LOOKUP:
+                continue
+            for col2_code, reason in NCCI_LOOKUP[col1_code]:
+                if col2_code in codes:
+                    flag_key = (date, col1_code, col2_code)
+                    if flag_key in flagged:
+                        continue
+                    flagged.add(flag_key)
+
+                    col2_idx = codes[col2_code][0]
+                    col2_item = bill.line_items[col2_idx]
+                    issues.append(VerificationIssue(
+                        issue_type=IssueType.unbundling,
+                        severity=IssueSeverity.critical,
+                        cpt_code=col2_code,
+                        description=f"Unbundling: {col2_item.description}",
+                        details=f"{reason} — Both billed on {date}. "
+                                f"{col2_code} (${col2_item.charge_amount:,.2f}) should not be billed separately.",
+                        potential_overcharge=col2_item.charge_amount,
+                        line_item_index=col2_idx,
+                    ))
+
+    return issues
+
+
+def _check_plausibility(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 6: Check if procedures are plausible given diagnoses."""
+    issues = []
+
+    # Collect all ICD-10 codes
+    all_icd = [bill.primary_diagnosis_icd10] + bill.secondary_diagnoses_icd10
+
+    # Gather plausible and implausible sets across ALL diagnoses
+    plausible_codes: set[str] = set()
+    implausible_codes: set[str] = set()
+
+    for icd in all_icd:
+        # Try prefix matching: full code, then progressively shorter
+        matched = False
+        for prefix_len in [len(icd), 5, 4, 3]:
+            prefix = icd[:prefix_len]
+            if prefix in ICD10_PLAUSIBLE_CPTS:
+                mapping = ICD10_PLAUSIBLE_CPTS[prefix]
+                plausible_codes.update(mapping.get("plausible", set()))
+                implausible_codes.update(mapping.get("implausible", set()))
+                matched = True
+                break
+
+    # A procedure plausible for ANY diagnosis is OK
+    truly_implausible = implausible_codes - plausible_codes
+
+    for idx, item in enumerate(bill.line_items):
+        if item.cpt_code in truly_implausible:
+            # Find which diagnosis makes it implausible
+            diagnosis_desc = ""
+            for icd in all_icd:
+                for prefix_len in [len(icd), 5, 4, 3]:
+                    prefix = icd[:prefix_len]
+                    if prefix in ICD10_PLAUSIBLE_CPTS:
+                        if item.cpt_code in ICD10_PLAUSIBLE_CPTS[prefix].get("implausible", set()):
+                            diagnosis_desc = f"{icd} ({ICD10_PLAUSIBLE_CPTS[prefix]['description']})"
+                        break
+
+            issues.append(VerificationIssue(
+                issue_type=IssueType.implausible_procedure,
+                severity=IssueSeverity.warning,
+                cpt_code=item.cpt_code,
+                description=f"Implausible procedure: {item.description}",
+                details=f"{item.cpt_code} ({item.description}) is not clinically plausible "
+                        f"for diagnosis {diagnosis_desc}",
+                potential_overcharge=item.charge_amount * item.quantity,
+                line_item_index=idx,
+            ))
+
+    return issues
