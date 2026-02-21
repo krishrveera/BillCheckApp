@@ -3,3 +3,5 @@ uvicorn
 anthropic
 pydantic
 httpx
+authlib
+itsdangerous

@@ -2,16 +2,18 @@ import sys
 import os
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from models import PatientBill, VerificationReport
 from data.synthetic_bills import get_synthetic_bills
 from pipeline.extractor import bill_to_text
 from pipeline.comparator import verify_bill
 from pipeline.scorer import generate_report
+from auth import router as auth_router, get_current_user, APP_SECRET_KEY
 
 
 # Store synthetic data in app state
@@ -29,6 +31,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="BillCheck", description="Deterministic Medical Bill Verification", lifespan=lifespan)
 
+# Session middleware (must be added before OAuth routes)
+app.add_middleware(SessionMiddleware, secret_key=APP_SECRET_KEY)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,6 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount auth routes
+app.include_router(auth_router)
+
 
 @app.get("/health")
 async def health():
@@ -44,7 +52,7 @@ async def health():
 
 
 @app.get("/api/patients")
-async def list_patients():
+async def list_patients(user: dict = Depends(get_current_user)):
     """List all synthetic patients with summary info."""
     summaries = []
     for pid, data in PATIENTS.items():
@@ -65,7 +73,7 @@ async def list_patients():
 
 
 @app.get("/api/patients/{patient_id}")
-async def get_patient(patient_id: str):
+async def get_patient(patient_id: str, user: dict = Depends(get_current_user)):
     """Get full bill details and known errors for a patient."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -78,7 +86,7 @@ async def get_patient(patient_id: str):
 
 
 @app.get("/api/patients/{patient_id}/bill-text")
-async def get_bill_text(patient_id: str):
+async def get_bill_text(patient_id: str, user: dict = Depends(get_current_user)):
     """Get formatted text version of the bill."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -87,7 +95,7 @@ async def get_bill_text(patient_id: str):
 
 
 @app.post("/api/verify/{patient_id}")
-async def verify_patient(patient_id: str):
+async def verify_patient(patient_id: str, user: dict = Depends(get_current_user)):
     """Run full deterministic verification pipeline on a synthetic bill."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -108,7 +116,7 @@ async def verify_patient(patient_id: str):
 
 
 @app.post("/api/verify-custom")
-async def verify_custom(bill: PatientBill):
+async def verify_custom(bill: PatientBill, user: dict = Depends(get_current_user)):
     """Verify a custom bill submitted as JSON."""
     start = time.perf_counter()
     issues = verify_bill(bill)
