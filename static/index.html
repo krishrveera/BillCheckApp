@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BillCheck — Deterministic Medical Bill Verification</title>
+    <title>MedClear — Deterministic Medical Bill Verification</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -250,6 +250,107 @@
         .pipeline-step.deterministic { background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.3); color: #22d3ee; }
         .pipeline-arrow { color: #475569; font-size: 1.2rem; }
 
+        /* Upload Section */
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 30px;
+            background: #131a2b;
+            border: 2px dashed #1e293b;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .upload-section.dragover { border-color: #22d3ee; background: rgba(34, 211, 238, 0.05); }
+        .upload-section h3 { color: #f8fafc; margin-bottom: 8px; font-size: 1.1rem; }
+        .upload-section p { color: #64748b; font-size: 0.9rem; margin-bottom: 16px; }
+        .upload-input { display: none; }
+        .upload-label {
+            display: inline-block;
+            padding: 12px 28px;
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #a78bfa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .upload-label:hover { background: rgba(139, 92, 246, 0.25); border-color: #a78bfa; }
+        .upload-preview {
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .upload-preview img {
+            max-height: 120px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+        .upload-filename {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+        .upload-verify-btn {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-verify-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); }
+        .upload-verify-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .upload-verify-btn.loading { animation: pulse 1.5s ease-in-out infinite; }
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 30px 0;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+        .section-divider::before, .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #1e293b;
+        }
+
+        .extraction-info {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .extraction-info .info-chip {
+            padding: 4px 12px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            font-size: 0.8rem;
+            color: #a78bfa;
+        }
+
+        .upload-error {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #f87171;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             .dashboard { grid-template-columns: repeat(2, 1fr); }
             .patients-grid { grid-template-columns: 1fr; }
@@ -336,6 +437,14 @@
             const [activeTab, setActiveTab] = useState('issues');
             const [patientBill, setPatientBill] = useState(null);
             const [authState, setAuthState] = useState({ loading: true, authenticated: false, user: null, oauthConfigured: false });
+            const [uploadFile, setUploadFile] = useState(null);
+            const [uploadPreview, setUploadPreview] = useState(null);
+            const [uploadLoading, setUploadLoading] = useState(false);
+            const [uploadError, setUploadError] = useState(null);
+            const [extractionMs, setExtractionMs] = useState(null);
+            const [verificationMs, setVerificationMs] = useState(null);
+            const [isUploadResult, setIsUploadResult] = useState(false);
+            const [dragover, setDragover] = useState(false);
 
             // Check auth status on mount
             useEffect(() => {
@@ -372,6 +481,10 @@
                 setReport(null);
                 setLatency(null);
                 setActiveTab('issues');
+                setIsUploadResult(false);
+                setUploadFile(null);
+                setUploadPreview(null);
+                setUploadError(null);
                 fetch(`/api/patients/${id}`)
                     .then(r => r.json())
                     .then(data => {
@@ -380,9 +493,71 @@
                     });
             };
 
+            const handleFileSelect = (file) => {
+                if (!file) return;
+                const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+                if (!allowed.includes(file.type)) {
+                    setUploadError('Please upload a PNG, JPEG, or WebP image.');
+                    return;
+                }
+                setUploadFile(file);
+                setUploadError(null);
+                setReport(null);
+                setSelectedId(null);
+                setIsUploadResult(false);
+                const reader = new FileReader();
+                reader.onload = (e) => setUploadPreview(e.target.result);
+                reader.readAsDataURL(file);
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                setDragover(false);
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            };
+
+            const runUploadVerification = async () => {
+                if (!uploadFile) return;
+                setUploadLoading(true);
+                setUploadError(null);
+                try {
+                    const formData = new FormData();
+                    formData.append('file', uploadFile);
+                    const res = await fetch('/api/verify-upload', { method: 'POST', body: formData });
+                    if (!res.ok) {
+                        let errorMsg = `Server error (${res.status})`;
+                        try {
+                            const err = await res.json();
+                            errorMsg = err.detail || errorMsg;
+                        } catch {
+                            const text = await res.text();
+                            if (text) errorMsg = text;
+                        }
+                        throw new Error(errorMsg);
+                    }
+                    const data = await res.json();
+                    setReport(data.report);
+                    setPatientBill(data.bill);
+                    setKnownErrors([]);
+                    setLatency(data.latency_ms);
+                    setExtractionMs(data.extraction_ms);
+                    setVerificationMs(data.verification_ms);
+                    setIsUploadResult(true);
+                    setActiveTab('issues');
+                } catch (err) {
+                    console.error(err);
+                    setUploadError(err.message);
+                } finally {
+                    setUploadLoading(false);
+                }
+            };
+
             const runVerification = async () => {
                 if (!selectedId) return;
                 setLoading(true);
+                setIsUploadResult(false);
                 try {
                     const res = await fetch(`/api/verify/${selectedId}`, { method: 'POST' });
                     const data = await res.json();
@@ -441,7 +616,7 @@
                     {(!authState.oauthConfigured || authState.authenticated) && !authState.loading && (
                     <>
                     <div className="header">
-                        <h1>Bill<span>Check</span></h1>
+                        <h1>Med<span>Clear</span></h1>
                         <p>Deterministic Medical Bill Verification</p>
                         <div className="differentiator">
                             LLM extracts the bill &bull; Pure logic checks the rules &bull; Verification cannot hallucinate
@@ -504,6 +679,46 @@
                         {loading ? (<><span className="spinner"></span>Running 6 Deterministic Engines...</>) : 'Verify Selected Bill'}
                     </button>
 
+                    <div className="section-divider">OR UPLOAD YOUR OWN BILL</div>
+
+                    <div
+                        className={`upload-section ${dragover ? 'dragover' : ''}`}
+                        onDragOver={(e) => { e.preventDefault(); setDragover(true); }}
+                        onDragLeave={() => setDragover(false)}
+                        onDrop={handleDrop}
+                    >
+                        <h3>Upload a Medical Bill Image</h3>
+                        <p>PNG, JPEG, or WebP — Claude Vision will extract line items, then 6 deterministic engines verify</p>
+                        <label className="upload-label" htmlFor="bill-upload">
+                            Choose Image
+                        </label>
+                        <input
+                            id="bill-upload"
+                            className="upload-input"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif"
+                            onChange={(e) => handleFileSelect(e.target.files[0])}
+                        />
+                        {uploadPreview && (
+                            <div className="upload-preview">
+                                <img src={uploadPreview} alt="Bill preview" />
+                                <span className="upload-filename">{uploadFile?.name}</span>
+                            </div>
+                        )}
+                        {uploadError && <div className="upload-error">{uploadError}</div>}
+                        {uploadFile && (
+                            <div>
+                                <button
+                                    className={`upload-verify-btn ${uploadLoading ? 'loading' : ''}`}
+                                    onClick={runUploadVerification}
+                                    disabled={uploadLoading}
+                                >
+                                    {uploadLoading ? (<><span className="spinner"></span>Extracting &amp; Verifying...</>) : 'Extract & Verify'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {report && (
                         <>
                             <div className="dashboard">
@@ -523,14 +738,26 @@
                                     <div className="sub">potential overcharges</div>
                                 </div>
                                 <div className="dash-card">
-                                    <div className="label">Verification Time</div>
+                                    <div className="label">{isUploadResult ? 'Total Time' : 'Verification Time'}</div>
                                     <div className="value" style={{color: '#22d3ee'}}>{latency}ms</div>
-                                    <div className="sub">pure deterministic logic</div>
+                                    <div className="sub">
+                                        {isUploadResult
+                                            ? `extraction: ${extractionMs}ms + verification: ${verificationMs}ms`
+                                            : 'pure deterministic logic'}
+                                    </div>
                                 </div>
                             </div>
 
+                            {isUploadResult && (
+                                <div className="extraction-info">
+                                    <span className="info-chip">Extracted via Claude Vision</span>
+                                    <span className="info-chip">Patient: {report.patient_name}</span>
+                                    <span className="info-chip">Facility: {report.facility_name}</span>
+                                </div>
+                            )}
+
                             <div className="tabs">
-                                {['issues', 'bill', 'dispute', 'phone', 'answer-key'].map(tab => (
+                                {['issues', 'bill', 'dispute', 'phone', ...(isUploadResult ? [] : ['answer-key'])].map(tab => (
                                     <button
                                         key={tab}
                                         className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -648,7 +875,7 @@
                     )}
 
                     <div style={{textAlign: 'center', padding: '40px 0 20px', color: '#475569', fontSize: '0.85rem'}}>
-                        BillCheck &mdash; The LLM reads the bill. Pure logic checks the rules. The verification cannot hallucinate.
+                        MedClear &mdash; The LLM reads the bill. Pure logic checks the rules. The verification cannot hallucinate.
                     </div>
                     </>
                     )}

@@ -32,7 +32,7 @@ def _build_live_fee_schedule(bill: PatientBill) -> dict[str, dict]:
     2. Fall back to the hardcoded CMS_FEE_SCHEDULE_FALLBACK for any
        code not returned by the API.
     """
-    codes = list({item.cpt_code for item in bill.line_items})
+    codes = list({item.cpt_code for item in bill.line_items if item.cpt_code and item.cpt_code.strip()})
     try:
         schedule = build_fee_schedule(
             codes, fallback=CMS_FEE_SCHEDULE_FALLBACK, use_cache=True
@@ -72,6 +72,9 @@ def _check_duplicates(bill: PatientBill) -> list[VerificationIssue]:
     groups: dict[tuple[str, str], list[int]] = defaultdict(list)
 
     for idx, item in enumerate(bill.line_items):
+        # Skip items with no CPT/HCPCS code (e.g., hospital internal codes only)
+        if not item.cpt_code or item.cpt_code.strip() == "":
+            continue
         key = (item.cpt_code, item.date_of_service)
         groups[key].append(idx)
 
@@ -139,7 +142,8 @@ def _check_dates(bill: PatientBill) -> list[VerificationIssue]:
 def _check_math(bill: PatientBill) -> list[VerificationIssue]:
     """Engine 3: Verify total matches sum of line items."""
     issues = []
-    computed_sum = sum(item.charge_amount * item.quantity for item in bill.line_items)
+    # charge_amount already represents the total for each line (qty × unit price)
+    computed_sum = sum(item.charge_amount for item in bill.line_items)
     discrepancy = bill.total_billed - computed_sum
 
     if abs(discrepancy) > 100:
@@ -177,6 +181,9 @@ def _check_cms_benchmarks(
     schedule = fee_schedule or CMS_FEE_SCHEDULE
 
     for idx, item in enumerate(bill.line_items):
+        # Skip items with no CPT/HCPCS code
+        if not item.cpt_code or item.cpt_code.strip() == "":
+            continue
         if item.cpt_code not in schedule:
             continue
 
@@ -217,9 +224,11 @@ def _check_unbundling(bill: PatientBill) -> list[VerificationIssue]:
     issues = []
     flagged: set[tuple[str, str, str]] = set()
 
-    # Build per-date code sets with their indices
+    # Build per-date code sets with their indices (skip items without CPT codes)
     date_codes: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
     for idx, item in enumerate(bill.line_items):
+        if not item.cpt_code or item.cpt_code.strip() == "":
+            continue
         date_codes[item.date_of_service][item.cpt_code].append(idx)
 
     for date, codes in date_codes.items():
@@ -276,6 +285,8 @@ def _check_plausibility(bill: PatientBill) -> list[VerificationIssue]:
     truly_implausible = implausible_codes - plausible_codes
 
     for idx, item in enumerate(bill.line_items):
+        if not item.cpt_code or item.cpt_code.strip() == "":
+            continue
         if item.cpt_code in truly_implausible:
             # Find which diagnosis makes it implausible
             diagnosis_desc = ""

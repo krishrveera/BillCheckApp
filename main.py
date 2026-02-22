@@ -1,12 +1,13 @@
 import sys
 import os
 import time
+import traceback
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 load_dotenv()  # load .env before any module reads os.getenv
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -14,7 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from models import PatientBill, VerificationReport
 from data.synthetic_bills import get_synthetic_bills
-from pipeline.extractor import bill_to_text
+from pipeline.extractor import bill_to_text, extract_bill_from_image
 from pipeline.comparator import verify_bill
 from pipeline.scorer import generate_report
 from auth import router as auth_router, get_current_user, APP_SECRET_KEY
@@ -130,6 +131,68 @@ async def verify_custom(bill: PatientBill, user: dict = Depends(get_current_user
     return {
         "report": report.model_dump(),
         "latency_ms": round(elapsed_ms, 2),
+    }
+
+
+ALLOWED_MEDIA_TYPES = {
+    "image/png": "image/png",
+    "image/jpeg": "image/jpeg",
+    "image/jpg": "image/jpeg",
+    "image/webp": "image/webp",
+    "image/gif": "image/gif",
+    "application/pdf": "application/pdf",
+}
+
+
+@app.post("/api/verify-upload")
+async def verify_upload(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+    """Extract bill from an uploaded image using Claude Vision, then verify deterministically."""
+    if file.content_type not in ALLOWED_MEDIA_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}. Upload a PNG, JPEG, WebP image, or PDF.",
+        )
+
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise HTTPException(
+            status_code=500,
+            detail="ANTHROPIC_API_KEY environment variable is not set. Please set it and restart the server.",
+        )
+
+    image_data = await file.read()
+    media_type = ALLOWED_MEDIA_TYPES[file.content_type]
+
+    try:
+        start = time.perf_counter()
+        bill = await extract_bill_from_image(image_data, media_type)
+        extraction_ms = (time.perf_counter() - start) * 1000
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to extract bill from image: {e}",
+        )
+
+    try:
+        verify_start = time.perf_counter()
+        issues = verify_bill(bill)
+        report = generate_report(bill, issues)
+        verify_ms = (time.perf_counter() - verify_start) * 1000
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Verification failed: {e}",
+        )
+
+    total_ms = (time.perf_counter() - start) * 1000
+
+    return {
+        "report": report.model_dump(),
+        "bill": bill.model_dump(),
+        "extraction_ms": round(extraction_ms, 2),
+        "verification_ms": round(verify_ms, 2),
+        "latency_ms": round(total_ms, 2),
     }
 
 

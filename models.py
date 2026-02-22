@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class BillLineItem(BaseModel):
-    cpt_code: str
+    cpt_code: str = ""
     description: str
     charge_amount: float
     date_of_service: str
