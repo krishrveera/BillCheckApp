@@ -1314,7 +1314,7 @@
 
                     <div className="hiw-pipeline-section">
                         <h3>The Verification Steps</h3>
-                        <div className="section-sub">One AI step hands off to six independent checks. Each step runs on its own and produces a clear, explainable result.</div>
+                        <div className="section-sub">One AI step hands off to eight independent checks. Each step runs on its own and produces a clear, explainable result.</div>
                         <div className="pipeline-large">
                             <div className="pipeline-large-step ai">
                                 <div className="step-name">AI Reads Your Bill</div>
@@ -1350,6 +1350,16 @@
                                 <div className="step-name">Reasonableness</div>
                                 <div className="step-desc">Flags quantities or combinations that seem unusual</div>
                             </div>
+                            <div className="pipeline-large-arrow">&rsaquo;</div>
+                            <div className="pipeline-large-step det">
+                                <div className="step-name">Dosage Safety</div>
+                                <div className="step-desc">Checks medication quantities against FDA daily limits</div>
+                            </div>
+                            <div className="pipeline-large-arrow">&rsaquo;</div>
+                            <div className="pipeline-large-step det">
+                                <div className="step-name">Phantom Billing</div>
+                                <div className="step-desc">Detects impossible schedules and conflicting procedures</div>
+                            </div>
                         </div>
                         <div className="legend">
                             <div className="legend-item">
@@ -1366,7 +1376,7 @@
                     <div className="hiw-cards">
                         <div className="hiw-card">
                             <h4>Reliable Results</h4>
-                            <p>Only the reading step uses AI. All six checks run on fixed, tested rules — comparing numbers, verifying dates, and looking up official rates. There is no guesswork involved.</p>
+                            <p>Only the reading step uses AI. All eight checks run on fixed, tested rules — comparing numbers, verifying dates, and looking up official rates. There is no guesswork involved.</p>
                         </div>
                         <div className="hiw-card">
                             <h4>Nothing Hidden</h4>
@@ -1374,7 +1384,7 @@
                         </div>
                         <div className="hiw-card">
                             <h4>Fast Results</h4>
-                            <p>All six checks run at the same time. You get a complete verification report in under a second, with no waiting around.</p>
+                            <p>All eight checks run at the same time. You get a complete verification report in under a second, with no waiting around.</p>
                         </div>
                         <div className="hiw-card">
                             <h4>Ready to Act</h4>
@@ -1765,7 +1775,7 @@
                                 onDrop={handleDrop}
                             >
                                 <h3>Upload a Medical Bill</h3>
-                                <p>PNG, JPEG, WebP, or PDF — AI reads your bill, then 6 automated checks verify every charge</p>
+                                <p>PNG, JPEG, WebP, or PDF — AI reads your bill, then 8 automated checks verify every charge</p>
                                 <label className="upload-label" htmlFor="bill-upload">
                                     Choose File
                                 </label>
@@ -1814,7 +1824,7 @@
                                 onDrop={handleDrop}
                             >
                                 <h3>Upload a Medical Bill</h3>
-                                <p>PNG, JPEG, WebP, or PDF — AI reads your bill, then 6 automated checks verify every charge</p>
+                                <p>PNG, JPEG, WebP, or PDF — AI reads your bill, then 8 automated checks verify every charge</p>
                                 <label className="upload-label" htmlFor="bill-upload">
                                     Choose File
                                 </label>
