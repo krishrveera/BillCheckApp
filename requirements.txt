@@ -5,3 +5,4 @@ pydantic
 httpx
 authlib
 itsdangerous
+python-dotenv

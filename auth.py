@@ -66,7 +66,17 @@ async def login(request: Request):
             status_code=503,
             detail="Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars.",
         )
-    return await oauth.google.authorize_redirect(request, OAUTH_REDIRECT_URI)
+
+    # Use current request host by default so session cookie + callback stay on the same origin.
+    # This avoids state mismatches when switching between localhost and 127.0.0.1.
+    redirect_uri = OAUTH_REDIRECT_URI.strip() if OAUTH_REDIRECT_URI else ""
+    if not redirect_uri:
+        redirect_uri = str(request.url_for("auth_callback"))
+
+    if OAUTH_REDIRECT_URI == "http://localhost:8000/auth/callback":
+        redirect_uri = str(request.url_for("auth_callback"))
+
+    return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/callback")

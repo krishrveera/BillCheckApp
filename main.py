@@ -2,6 +2,10 @@ import sys
 import os
 import time
 from contextlib import asynccontextmanager
+
+from dotenv import load_dotenv
+load_dotenv()  # load .env before any module reads os.getenv
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
