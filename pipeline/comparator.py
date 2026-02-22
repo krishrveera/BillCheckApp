@@ -148,7 +148,13 @@ def _check_math(bill: PatientBill) -> list[VerificationIssue]:
     computed_sum = sum(item.charge_amount * item.quantity for item in bill.line_items)
     discrepancy = bill.total_billed - computed_sum
 
-    if abs(discrepancy) > 100:
+    abs_disc = abs(discrepancy)
+    disc_label = (
+        f"Overcharged by ${abs_disc:,.2f}" if discrepancy > 0
+        else f"Undercharged by ${abs_disc:,.2f} (line items exceed stated total)"
+    )
+
+    if abs_disc > 100:
         issues.append(VerificationIssue(
             issue_type=IssueType.math_error,
             severity=IssueSeverity.critical,
@@ -156,10 +162,10 @@ def _check_math(bill: PatientBill) -> list[VerificationIssue]:
             description="Math error: total does not match line items",
             details=f"Billed total: ${bill.total_billed:,.2f}. "
                     f"Sum of line items: ${computed_sum:,.2f}. "
-                    f"Discrepancy: ${discrepancy:,.2f}",
-            potential_overcharge=max(discrepancy, 0),
+                    f"{disc_label}",
+            potential_overcharge=abs_disc,
         ))
-    elif abs(discrepancy) > 0.01:
+    elif abs_disc > 0.01:
         issues.append(VerificationIssue(
             issue_type=IssueType.math_error,
             severity=IssueSeverity.warning,
@@ -167,8 +173,8 @@ def _check_math(bill: PatientBill) -> list[VerificationIssue]:
             description="Minor math discrepancy in total",
             details=f"Billed total: ${bill.total_billed:,.2f}. "
                     f"Sum of line items: ${computed_sum:,.2f}. "
-                    f"Discrepancy: ${discrepancy:,.2f}",
-            potential_overcharge=max(discrepancy, 0),
+                    f"{disc_label}",
+            potential_overcharge=abs_disc,
         ))
 
     return issues
@@ -187,6 +193,27 @@ def _check_cms_benchmarks(
         if not item.cpt_code or item.cpt_code.strip() == "":
             continue
         if item.cpt_code not in schedule:
+            # Let the user know this code couldn't be checked
+            code = item.cpt_code
+            if code.startswith("S") or code.startswith("T") or code.startswith("C"):
+                reason = (
+                    f"{code} is a private-payer code (not in the Medicare fee schedule). "
+                    f"No Medicare benchmark is available for comparison."
+                )
+            else:
+                reason = (
+                    f"{code} was not found in the CMS Medicare fee schedule or fallback data. "
+                    f"No benchmark available for comparison."
+                )
+            issues.append(VerificationIssue(
+                issue_type=IssueType.cms_overcharge,
+                severity=IssueSeverity.info,
+                cpt_code=code,
+                description=f"No Medicare rate available: {item.description}",
+                details=reason,
+                potential_overcharge=0,
+                line_item_index=idx,
+            ))
             continue
 
         entry = schedule[item.cpt_code]

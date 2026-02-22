@@ -86,6 +86,11 @@ CMS_FEE_SCHEDULE_FALLBACK = {
     "J1885": {"description": "Ketorolac injection, 15mg", "medicare_rate": 2.0, "category": "Pharmacy"},
     "J2550": {"description": "Promethazine injection, 50mg", "medicare_rate": 3.0, "category": "Pharmacy"},
     "J3010": {"description": "Fentanyl citrate injection, 0.1mg", "medicare_rate": 2.0, "category": "Pharmacy"},
+    "J2405": {"description": "Ondansetron HCl injection, 1mg", "medicare_rate": 0.10, "category": "Pharmacy"},
+    "J7120": {"description": "Normal saline infusion, 1000ml", "medicare_rate": 3.0, "category": "Pharmacy"},
+    # Urinalysis
+    "81025": {"description": "Urine pregnancy test", "medicare_rate": 8.0, "category": "Lab"},
+    "96375": {"description": "IV push, each additional substance", "medicare_rate": 16.0, "category": "IV/Infusion"},
     # Pathology
     "88305": {"description": "Surgical pathology, gross/micro", "medicare_rate": 75.0, "category": "Pathology"},
     "88307": {"description": "Surgical pathology, complex", "medicare_rate": 155.0, "category": "Pathology"},

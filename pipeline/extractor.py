@@ -29,7 +29,7 @@ Rules:
 - Use standard CPT/HCPCS codes (5 characters for CPT, J-codes for pharmacy)
 - Do NOT infer or guess CPT codes — only use codes explicitly listed in the CPT/HCPCS column
 - Dates must be in YYYY-MM-DD format
-- charge_amount is the total charge for that line (already reflects quantity)
+- charge_amount is the PER-UNIT price (NOT the line total). If a line shows a total of $180 for qty 4, charge_amount should be 45.00 and quantity should be 4
 - quantity defaults to 1 if not specified
 - source_text should contain the original line from the bill"""
 
@@ -95,7 +95,7 @@ Rules:
 - Use standard CPT/HCPCS codes (5 characters for CPT, J-codes for pharmacy)
 - Do NOT infer or guess CPT codes — only use codes explicitly listed in the CPT/HCPCS column
 - Dates must be in YYYY-MM-DD format
-- charge_amount is the total charge for that line (already reflects quantity)
+- charge_amount is the PER-UNIT price (NOT the line total). If a line shows a total of $180 for qty 4, charge_amount should be 45.00 and quantity should be 4
 - quantity defaults to 1 if not specified"""
 
 
