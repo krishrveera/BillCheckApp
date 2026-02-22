@@ -790,6 +790,108 @@
         body.mode-cb .differentiator { background: #eff6ff; border-color: #93c5fd; color: #0369a1; }
         body.mode-cb .hiw-card h4 { color: #0f172a; }
 
+        /* Issue delete button */
+        .issue-delete-btn {
+            background: none;
+            border: none;
+            color: #c8c2ba;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+        .issue-delete-btn:hover { color: #c0392b; background: #fff0f0; }
+
+        /* Add Issue */
+        .add-issue-btn {
+            padding: 9px 20px;
+            border-radius: 30px;
+            border: 1.5px dashed #b6dfc6;
+            background: transparent;
+            color: #2a7d4f;
+            font-size: 0.93rem;
+            font-family: Georgia, serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .add-issue-btn:hover { background: #eaf5ee; border-style: solid; }
+        .add-issue-form {
+            margin-top: 18px;
+            padding: 22px 24px;
+            background: #faf8f5;
+            border: 1.5px solid #e2ddd7;
+            border-radius: 14px;
+        }
+        .add-issue-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #2c2825;
+            font-family: Georgia, serif;
+            margin-bottom: 16px;
+        }
+        .add-issue-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .add-issue-field { display: flex; flex-direction: column; gap: 5px; }
+        .add-issue-field-wide { grid-column: 1 / -1; }
+        .add-issue-field label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #9e9893;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .add-issue-field input,
+        .add-issue-field select {
+            padding: 9px 12px;
+            border: 1.5px solid #e2ddd7;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #ffffff;
+            color: #2c2825;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .add-issue-field input:focus,
+        .add-issue-field select:focus { border-color: #2a7d4f; }
+        .add-issue-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .add-issue-cancel {
+            padding: 9px 20px;
+            border-radius: 30px;
+            border: 1.5px solid #e2ddd7;
+            background: transparent;
+            color: #9e9893;
+            font-size: 0.93rem;
+            font-family: Georgia, serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .add-issue-cancel:hover { border-color: #c8c2ba; color: #6b6560; }
+        .add-issue-submit {
+            padding: 9px 22px;
+            border-radius: 30px;
+            border: none;
+            background: #2a7d4f;
+            color: #ffffff;
+            font-size: 0.93rem;
+            font-family: Georgia, serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 2px 8px rgba(42,125,79,0.2);
+        }
+        .add-issue-submit:hover { background: #236b43; }
+        .add-issue-submit:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
         /* Help Resources */
         .help-intro {
             margin-bottom: 24px;
@@ -1191,6 +1293,10 @@
             const [isUploadResult, setIsUploadResult] = useState(false);
             const [dragover, setDragover] = useState(false);
 
+            // Add / delete issues state
+            const [showAddIssue, setShowAddIssue] = useState(false);
+            const [newIssue, setNewIssue] = useState({ severity: 'warning', cpt_code: '', issue_type: '', description: '', details: '', potential_overcharge: '' });
+
             // Accessibility state
             const [accessOpen, setAccessOpen] = useState(false);
             const [textSize, setTextSize] = useState('normal');   // 'normal' | 'large' | 'largest'
@@ -1391,6 +1497,34 @@
                 }
             };
 
+            const deleteIssue = (issueToDelete) => {
+                setReport(prev => {
+                    const issues = prev.issues.filter(i => i !== issueToDelete);
+                    return {
+                        ...prev,
+                        issues,
+                        total_flagged: issues.reduce((sum, i) => sum + (i.potential_overcharge || 0), 0),
+                    };
+                });
+            };
+
+            const addIssue = () => {
+                if (!newIssue.description.trim()) return;
+                const issue = {
+                    ...newIssue,
+                    issue_type: newIssue.issue_type || 'manual_entry',
+                    potential_overcharge: parseFloat(newIssue.potential_overcharge) || 0,
+                    line_item_index: null,
+                };
+                setReport(prev => ({
+                    ...prev,
+                    issues: [...prev.issues, issue],
+                    total_flagged: prev.total_flagged + (issue.potential_overcharge || 0),
+                }));
+                setNewIssue({ severity: 'warning', cpt_code: '', issue_type: '', description: '', details: '', potential_overcharge: '' });
+                setShowAddIssue(false);
+            };
+
             const gradeClass = (grade) => {
                 const map = { A: 'score-a', B: 'score-b', C: 'score-c', D: 'score-d', F: 'score-f' };
                 return map[grade] || '';
@@ -1557,10 +1691,10 @@
                                         </div>
                                         <div className="dash-card">
                                             <div className="label">{isUploadResult ? 'Total Time' : 'Time to Check'}</div>
-                                            <div className="value" style={{color: '#2a7d4f'}}>{latency}ms</div>
+                                            <div className="value" style={{color: '#2a7d4f'}}>{(latency / 1000).toFixed(2)}s</div>
                                             <div className="sub">
                                                 {isUploadResult
-                                                    ? `extraction: ${extractionMs}ms + verification: ${verificationMs}ms`
+                                                    ? `extract: ${(extractionMs / 1000).toFixed(2)}s + verify: ${(verificationMs / 1000).toFixed(2)}s`
                                                     : 'automated'}
                                             </div>
                                         </div>
@@ -1593,44 +1727,101 @@
 
                                     <div className="tab-content">
                                         {activeTab === 'issues' && (
-                                            <table className="issues-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Severity</th>
-                                                        <th>Code</th>
-                                                        <th>Issue Type</th>
-                                                        <th>Description</th>
-                                                        <th>Amount</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {[...report.issues]
-                                                        .sort((a, b) => {
-                                                            const order = { critical: 0, warning: 1, info: 2 };
-                                                            return order[a.severity] - order[b.severity];
-                                                        })
-                                                        .map((issue, idx) => (
-                                                        <tr key={idx}>
-                                                            <td>
-                                                                <span className={`severity-badge severity-${issue.severity}`}>
-                                                                    {issue.severity}
-                                                                </span>
-                                                            </td>
-                                                            <td style={{fontFamily: 'monospace', color: '#9e9893'}}>{issue.cpt_code}</td>
-                                                            <td style={{color: '#3a3530'}}>{issue.issue_type.replace(/_/g, ' ')}</td>
-                                                            <td>
-                                                                <div style={{color: '#2c2825'}}>{issue.description}</div>
-                                                                <div className="issue-details">{issue.details}</div>
-                                                            </td>
-                                                            <td className="flagged-amount">
-                                                                {issue.potential_overcharge > 0
-                                                                    ? `$${issue.potential_overcharge.toLocaleString('en-US', {minimumFractionDigits: 2})}`
-                                                                    : '\u2014'}
-                                                            </td>
+                                            <div>
+                                                <table className="issues-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Severity</th>
+                                                            <th>Code</th>
+                                                            <th>Issue Type</th>
+                                                            <th>Description</th>
+                                                            <th>Amount</th>
+                                                            <th></th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                                    </thead>
+                                                    <tbody>
+                                                        {[...report.issues]
+                                                            .sort((a, b) => {
+                                                                const order = { critical: 0, warning: 1, info: 2 };
+                                                                return order[a.severity] - order[b.severity];
+                                                            })
+                                                            .map((issue, idx) => (
+                                                            <tr key={idx}>
+                                                                <td>
+                                                                    <span className={`severity-badge severity-${issue.severity}`}>
+                                                                        {issue.severity}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{fontFamily: 'monospace', color: '#9e9893'}}>{issue.cpt_code}</td>
+                                                                <td style={{color: '#3a3530'}}>{issue.issue_type.replace(/_/g, ' ')}</td>
+                                                                <td>
+                                                                    <div style={{color: '#2c2825'}}>{issue.description}</div>
+                                                                    <div className="issue-details">{issue.details}</div>
+                                                                </td>
+                                                                <td className="flagged-amount">
+                                                                    {issue.potential_overcharge > 0
+                                                                        ? `$${issue.potential_overcharge.toLocaleString('en-US', {minimumFractionDigits: 2})}`
+                                                                        : '\u2014'}
+                                                                </td>
+                                                                <td>
+                                                                    <button
+                                                                        className="issue-delete-btn"
+                                                                        onClick={() => deleteIssue(issue)}
+                                                                        title="Remove this issue"
+                                                                    >&#x2715;</button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+
+                                                {/* Add Issue */}
+                                                {!showAddIssue ? (
+                                                    <div style={{marginTop: 16, textAlign: 'right'}}>
+                                                        <button className="add-issue-btn" onClick={() => setShowAddIssue(true)}>
+                                                            + Add Issue
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="add-issue-form">
+                                                        <div className="add-issue-title">Add an Issue</div>
+                                                        <div className="add-issue-grid">
+                                                            <div className="add-issue-field">
+                                                                <label>Severity</label>
+                                                                <select value={newIssue.severity} onChange={e => setNewIssue(p => ({...p, severity: e.target.value}))}>
+                                                                    <option value="critical">Critical</option>
+                                                                    <option value="warning">Warning</option>
+                                                                    <option value="info">Info</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="add-issue-field">
+                                                                <label>CPT Code</label>
+                                                                <input type="text" placeholder="e.g. 99213" value={newIssue.cpt_code} onChange={e => setNewIssue(p => ({...p, cpt_code: e.target.value}))} />
+                                                            </div>
+                                                            <div className="add-issue-field">
+                                                                <label>Issue Type</label>
+                                                                <input type="text" placeholder="e.g. duplicate_charge" value={newIssue.issue_type} onChange={e => setNewIssue(p => ({...p, issue_type: e.target.value}))} />
+                                                            </div>
+                                                            <div className="add-issue-field">
+                                                                <label>Amount Flagged ($)</label>
+                                                                <input type="number" min="0" step="0.01" placeholder="0.00" value={newIssue.potential_overcharge} onChange={e => setNewIssue(p => ({...p, potential_overcharge: e.target.value}))} />
+                                                            </div>
+                                                            <div className="add-issue-field add-issue-field-wide">
+                                                                <label>Description <span style={{color:'#c0392b'}}>*</span></label>
+                                                                <input type="text" placeholder="Brief description of the issue" value={newIssue.description} onChange={e => setNewIssue(p => ({...p, description: e.target.value}))} />
+                                                            </div>
+                                                            <div className="add-issue-field add-issue-field-wide">
+                                                                <label>Details</label>
+                                                                <input type="text" placeholder="Additional context (optional)" value={newIssue.details} onChange={e => setNewIssue(p => ({...p, details: e.target.value}))} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="add-issue-actions">
+                                                            <button className="add-issue-cancel" onClick={() => { setShowAddIssue(false); setNewIssue({ severity: 'warning', cpt_code: '', issue_type: '', description: '', details: '', potential_overcharge: '' }); }}>Cancel</button>
+                                                            <button className="add-issue-submit" onClick={addIssue} disabled={!newIssue.description.trim()}>Add Issue</button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
 
                                         {activeTab === 'bill' && patientBill && (
