@@ -57,7 +57,7 @@ async def health():
 
 
 @app.get("/api/patients")
-async def list_patients(user: dict = Depends(get_current_user)):
+async def list_patients():
     """List all synthetic patients with summary info."""
     summaries = []
     for pid, data in PATIENTS.items():
@@ -78,7 +78,7 @@ async def list_patients(user: dict = Depends(get_current_user)):
 
 
 @app.get("/api/patients/{patient_id}")
-async def get_patient(patient_id: str, user: dict = Depends(get_current_user)):
+async def get_patient(patient_id: str):
     """Get full bill details and known errors for a patient."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -91,7 +91,7 @@ async def get_patient(patient_id: str, user: dict = Depends(get_current_user)):
 
 
 @app.get("/api/patients/{patient_id}/bill-text")
-async def get_bill_text(patient_id: str, user: dict = Depends(get_current_user)):
+async def get_bill_text(patient_id: str):
     """Get formatted text version of the bill."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -100,7 +100,7 @@ async def get_bill_text(patient_id: str, user: dict = Depends(get_current_user))
 
 
 @app.post("/api/verify/{patient_id}")
-async def verify_patient(patient_id: str, user: dict = Depends(get_current_user)):
+async def verify_patient(patient_id: str):
     """Run full deterministic verification pipeline on a synthetic bill."""
     if patient_id not in PATIENTS:
         raise HTTPException(status_code=404, detail="Patient not found")
