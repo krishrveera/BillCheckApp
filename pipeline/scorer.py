@@ -27,11 +27,11 @@ def calculate_safety_score(issues: list[VerificationIssue]) -> tuple[int, str]:
 
     for issue in issues:
         if issue.severity == IssueSeverity.critical:
-            score -= 15
+            score -= 5
         elif issue.severity == IssueSeverity.warning:
-            score -= 7
+            score -= 3
         elif issue.severity == IssueSeverity.info:
-            score -= 2
+            score -= 1
 
     score = max(0, score)
 

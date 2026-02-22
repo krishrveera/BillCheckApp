@@ -55,7 +55,7 @@ The comparator module executes 7 independent, composable verification engines in
 
 The `scorer` module consumes the list of `VerificationIssue` objects and produces a `VerificationReport` containing:
 
-- **Safety Score**: Integer 0-100 computed by deducting 15 points per critical issue, 7 per warning, and 2 per informational finding. Clamped to [0, 100].
+- **Safety Score**: Integer 0-100 computed by deducting 5 points per critical issue, 3 per warning, and 1 per informational finding. Clamped to [0, 100].
 - **Letter Grade**: A (>=90), B (>=75), C (>=60), D (>=40), F (<40).
 - **Total Flagged Amount**: De-duplicated sum of `potential_overcharge` values, grouped by `line_item_index` (max overcharge per line) to prevent double-counting across engines.
 - **Dispute Letter**: Auto-generated formal letter addressed to the facility billing department, itemizing each finding with CPT codes and dollar amounts.
