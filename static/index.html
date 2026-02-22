@@ -1497,13 +1497,31 @@
                 }
             };
 
+            // Mirrors backend _calc_total_flagged exactly:
+            // deduplicate by line_item_index (take max per line), then cap at total_billed
+            const calcTotalFlagged = (issues, totalBilled) => {
+                const perLineMax = {};
+                let ungrouped = 0;
+                for (const issue of issues) {
+                    const overcharge = issue.potential_overcharge || 0;
+                    if (issue.line_item_index === null || issue.line_item_index === undefined) {
+                        ungrouped += overcharge;
+                    } else {
+                        const idx = issue.line_item_index;
+                        perLineMax[idx] = Math.max(perLineMax[idx] || 0, overcharge);
+                    }
+                }
+                const total = ungrouped + Object.values(perLineMax).reduce((a, b) => a + b, 0);
+                return totalBilled !== undefined ? Math.min(total, totalBilled) : total;
+            };
+
             const deleteIssue = (issueToDelete) => {
                 setReport(prev => {
                     const issues = prev.issues.filter(i => i !== issueToDelete);
                     return {
                         ...prev,
                         issues,
-                        total_flagged: issues.reduce((sum, i) => sum + (i.potential_overcharge || 0), 0),
+                        total_flagged: calcTotalFlagged(issues, prev.total_billed),
                     };
                 });
             };
@@ -1516,11 +1534,14 @@
                     potential_overcharge: parseFloat(newIssue.potential_overcharge) || 0,
                     line_item_index: null,
                 };
-                setReport(prev => ({
-                    ...prev,
-                    issues: [...prev.issues, issue],
-                    total_flagged: prev.total_flagged + (issue.potential_overcharge || 0),
-                }));
+                setReport(prev => {
+                    const issues = [...prev.issues, issue];
+                    return {
+                        ...prev,
+                        issues,
+                        total_flagged: calcTotalFlagged(issues, prev.total_billed),
+                    };
+                });
                 setNewIssue({ severity: 'warning', cpt_code: '', issue_type: '', description: '', details: '', potential_overcharge: '' });
                 setShowAddIssue(false);
             };
