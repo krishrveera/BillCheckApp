@@ -9,12 +9,13 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 17px; }
         body {
             font-family: Georgia, 'Times New Roman', serif;
             background: #f5f2ed;
             color: #2c2825;
             min-height: 100vh;
-            font-size: 17px;
+            font-size: 1rem;
             line-height: 1.7;
         }
         .container { max-width: 1100px; margin: 0 auto; padding: 0 28px 60px; }
@@ -42,7 +43,7 @@
         }
         .nav-brand-btn:hover { color: #2a7d4f; }
         .nav-brand-btn span { color: #2a7d4f; }
-        .nav-links { display: flex; gap: 8px; }
+        .nav-links { display: flex; gap: 8px; align-items: center; }
         .nav-link {
             padding: 10px 22px;
             border-radius: 30px;
@@ -57,6 +58,90 @@
         }
         .nav-link:hover { color: #2c2825; background: #ece8e2; border-color: #ddd9d3; }
         .nav-link.active { color: #2a7d4f; background: #eaf5ee; border-color: #b6dfc6; }
+
+        /* ── Accessibility button & panel ── */
+        .access-wrap { position: relative; }
+        .access-btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: 2px solid #ddd9d3;
+            background: #ffffff;
+            color: #2c2825;
+            font-family: Georgia, serif;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .access-btn:hover { border-color: #2a7d4f; color: #2a7d4f; }
+        .access-btn.open { border-color: #2a7d4f; color: #2a7d4f; background: #eaf5ee; }
+        .access-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 340px;
+            background: #ffffff;
+            border: 2px solid #e2ddd7;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            z-index: 100;
+            padding: 24px;
+        }
+        .access-panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c2825;
+            font-family: Georgia, serif;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2ddd7;
+        }
+        .access-section { margin-bottom: 20px; }
+        .access-section:last-child { margin-bottom: 0; }
+        .access-section-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #9e9893;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .access-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+        .access-opt {
+            padding: 9px 16px;
+            border-radius: 20px;
+            border: 2px solid #e2ddd7;
+            background: #faf8f5;
+            color: #6b6560;
+            font-size: 0.92rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+        .access-opt:hover { border-color: #2a7d4f; color: #2a7d4f; }
+        .access-opt.on { border-color: #2a7d4f; background: #eaf5ee; color: #2a7d4f; }
+        .access-read-btn {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 2px solid #e2ddd7;
+            background: #faf8f5;
+            color: #2c2825;
+            font-size: 1rem;
+            font-family: Georgia, serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .access-read-btn:hover { border-color: #2a7d4f; background: #eaf5ee; color: #2a7d4f; }
+        .access-read-btn.reading { border-color: #c0392b; background: #fff0f0; color: #c0392b; }
+        .access-divider { height: 1px; background: #e2ddd7; margin: 16px 0; }
 
         /* Header */
         .header {
@@ -347,8 +432,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-weight: 600;
         }
-
-        /* Pipeline section card */
         .hiw-pipeline-section {
             background: #ffffff;
             border: 2px solid #e2ddd7;
@@ -370,8 +453,6 @@
             margin-bottom: 36px;
             font-style: italic;
         }
-
-        /* Pipeline steps — grid-based, no arrows, spacious */
         .pipeline-large {
             display: flex;
             align-items: flex-start;
@@ -403,18 +484,10 @@
             line-height: 1.5;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        .pipeline-large-step.ai {
-            background: #f5f0ff;
-            border: 2px solid #d4c5f9;
-        }
+        .pipeline-large-step.ai { background: #f5f0ff; border: 2px solid #d4c5f9; }
         .pipeline-large-step.ai .step-name { color: #6d28d9; }
-        .pipeline-large-step.det {
-            background: #f0faf4;
-            border: 2px solid #b6dfc6;
-        }
+        .pipeline-large-step.det { background: #f0faf4; border: 2px solid #b6dfc6; }
         .pipeline-large-step.det .step-name { color: #2a7d4f; }
-
-        /* Arrow between pipeline steps */
         .pipeline-large-arrow {
             align-self: center;
             color: #c8c2ba;
@@ -422,7 +495,6 @@
             flex-shrink: 0;
             margin-top: -16px;
         }
-
         .legend {
             display: flex;
             gap: 28px;
@@ -441,8 +513,6 @@
         .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
         .legend-dot.ai  { background: #7c3aed; }
         .legend-dot.det { background: #2a7d4f; }
-
-        /* HIW info cards */
         .hiw-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -481,6 +551,65 @@
             margin-top: 20px;
         }
 
+        /* ── High Contrast mode ── */
+        body.mode-hc { background: #ffffff; color: #000000; }
+        body.mode-hc .nav,
+        body.mode-hc .header { border-bottom-color: #000000; }
+        body.mode-hc .patient-card,
+        body.mode-hc .dash-card,
+        body.mode-hc .tab-content,
+        body.mode-hc .hiw-card,
+        body.mode-hc .hiw-pipeline-section,
+        body.mode-hc .access-panel { background: #ffffff; border-color: #000000; box-shadow: none; }
+        body.mode-hc .patient-card:hover,
+        body.mode-hc .patient-card.selected { background: #f0f0f0; border-color: #000000; }
+        body.mode-hc .patient-card h3,
+        body.mode-hc .patient-card .detail-value,
+        body.mode-hc .patient-card .total { color: #000000; }
+        body.mode-hc .patient-card .mrn,
+        body.mode-hc .patient-card .detail-label,
+        body.mode-hc .dash-card .label,
+        body.mode-hc .dash-card .sub { color: #333333; }
+        body.mode-hc .verify-btn { background: #000000; color: #ffffff; box-shadow: none; }
+        body.mode-hc .verify-btn:hover { background: #333333; }
+        body.mode-hc .tabs { border-bottom-color: #000000; }
+        body.mode-hc .tab { color: #333333; }
+        body.mode-hc .tab.active { color: #000000; border-bottom-color: #000000; }
+        body.mode-hc .score-a, body.mode-hc .score-b { color: #006600; }
+        body.mode-hc .score-c { color: #885500; }
+        body.mode-hc .score-d, body.mode-hc .score-f { color: #cc0000; }
+        body.mode-hc .severity-critical { background: #fff0f0; color: #cc0000; border-color: #cc0000; }
+        body.mode-hc .severity-warning  { background: #fffbe0; color: #885500; border-color: #885500; }
+        body.mode-hc .severity-info     { background: #e8f0ff; color: #003399; border-color: #003399; }
+        body.mode-hc .flagged-amount { color: #cc0000; }
+        body.mode-hc .error-badge { background: #fff0f0; color: #cc0000; border-color: #cc0000; }
+        body.mode-hc .nav-link { color: #000000; border-color: #000000; }
+        body.mode-hc .nav-link.active { background: #000000; color: #ffffff; }
+        body.mode-hc .section-label { color: #000000; }
+        body.mode-hc .issues-table td,
+        body.mode-hc .bill-table td { border-bottom-color: #cccccc; color: #000000; }
+        body.mode-hc .preformatted { background: #f8f8f8; border-color: #000000; color: #000000; }
+        body.mode-hc .answer-key li { background: #fffbe0; border-color: #885500; color: #444400; }
+
+        /* ── Colour Blind Friendly mode (deuteranopia-safe: swap red→blue, green→teal) ── */
+        body.mode-cb .severity-critical { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+        body.mode-cb .flagged-amount { color: #1d4ed8; }
+        body.mode-cb .error-badge { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+        body.mode-cb .bill-table tr.flagged { background: #eff6ff; }
+        body.mode-cb .bill-table tr.flagged td:first-child { border-left-color: #1d4ed8; }
+        body.mode-cb .verify-btn { background: #0369a1; box-shadow: 0 4px 14px rgba(3,105,161,0.3); }
+        body.mode-cb .verify-btn:hover { background: #075985; }
+        body.mode-cb .patient-card:hover,
+        body.mode-cb .patient-card.selected { border-color: #0369a1; background: #eff6ff; box-shadow: 0 6px 20px rgba(3,105,161,0.15); }
+        body.mode-cb .score-a, body.mode-cb .score-b { color: #0369a1; }
+        body.mode-cb .tab.active { color: #0369a1; border-bottom-color: #0369a1; }
+        body.mode-cb .nav-link.active { color: #0369a1; background: #eff6ff; border-color: #93c5fd; }
+        body.mode-cb .pipeline-large-step.det { background: #eff6ff; border-color: #93c5fd; }
+        body.mode-cb .pipeline-large-step.det .step-name { color: #0369a1; }
+        body.mode-cb .legend-dot.det { background: #0369a1; }
+        body.mode-cb .differentiator { background: #eff6ff; border-color: #93c5fd; color: #0369a1; }
+        body.mode-cb .hiw-card h4 { color: #0f172a; }
+
         @media (max-width: 768px) {
             .dashboard { grid-template-columns: repeat(2, 1fr); }
             .patients-grid { grid-template-columns: 1fr; }
@@ -489,13 +618,14 @@
             .hiw-hero h2 { font-size: 2rem; }
             .pipeline-large { gap: 10px; }
             .pipeline-large-step { width: 110px; padding: 16px 12px; }
+            .access-panel { width: 290px; }
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         function HowItWorks() {
             return (
@@ -592,6 +722,70 @@
             const [activeTab, setActiveTab] = useState('issues');
             const [patientBill, setPatientBill] = useState(null);
 
+            // Accessibility state
+            const [accessOpen, setAccessOpen] = useState(false);
+            const [textSize, setTextSize] = useState('normal');   // 'normal' | 'large' | 'largest'
+            const [colorMode, setColorMode] = useState('standard'); // 'standard' | 'hc' | 'cb'
+            const [speaking, setSpeaking] = useState(false);
+            const accessRef = useRef(null);
+
+            // Apply text size — target html so all rem units scale
+            useEffect(() => {
+                const map = { normal: '17px', large: '20px', largest: '23px' };
+                document.documentElement.style.fontSize = map[textSize];
+            }, [textSize]);
+
+            // Apply colour mode
+            useEffect(() => {
+                document.body.classList.remove('mode-hc', 'mode-cb');
+                if (colorMode !== 'standard') document.body.classList.add(`mode-${colorMode}`);
+            }, [colorMode]);
+
+            // Close panel when clicking outside
+            useEffect(() => {
+                const handler = (e) => {
+                    if (accessRef.current && !accessRef.current.contains(e.target)) {
+                        setAccessOpen(false);
+                    }
+                };
+                document.addEventListener('mousedown', handler);
+                return () => document.removeEventListener('mousedown', handler);
+            }, []);
+
+            // Stop speech when page changes
+            useEffect(() => {
+                window.speechSynthesis && window.speechSynthesis.cancel();
+                setSpeaking(false);
+            }, [page]);
+
+            const toggleReadAloud = () => {
+                if (!window.speechSynthesis) return;
+                if (speaking) {
+                    window.speechSynthesis.cancel();
+                    setSpeaking(false);
+                    return;
+                }
+                let text = 'Welcome to MedClear. We check your medical bill for errors, simply and clearly. ';
+                if (patients.length > 0) {
+                    text += `There are ${patients.length} patient bills available to review. `;
+                    patients.forEach(p => {
+                        text += `${p.name}. Total billed: ${p.total_billed.toLocaleString('en-US', {style:'currency',currency:'USD'})}. ${p.known_error_count} known errors. `;
+                    });
+                }
+                if (report) {
+                    text += `Verification is complete. Safety score: ${report.safety_score}. Grade: ${report.grade}. `;
+                    text += `${report.issues.length} issues were found. `;
+                    text += `Total amount flagged: ${report.total_flagged.toLocaleString('en-US', {style:'currency',currency:'USD'})}. `;
+                }
+                const utt = new SpeechSynthesisUtterance(text);
+                utt.rate = 0.88;
+                utt.pitch = 1;
+                utt.onend = () => setSpeaking(false);
+                utt.onerror = () => setSpeaking(false);
+                setSpeaking(true);
+                window.speechSynthesis.speak(utt);
+            };
+
             useEffect(() => {
                 fetch('/api/patients')
                     .then(r => r.json())
@@ -639,13 +833,64 @@
             return (
                 <div className="container">
                     {/* Nav */}
-                    <nav className="nav" style={{justifyContent: page === 'home' ? 'flex-end' : 'space-between'}}>
+                    <nav className="nav">
                         {page === 'hiw' && (
                             <button className="nav-brand-btn" onClick={() => setPage('home')}>Med<span>Clear</span></button>
                         )}
                         <div className="nav-links">
-                            <button className={`nav-link ${page === 'home' ? 'active' : ''}`} onClick={() => setPage('home')}>Home</button>
-                            <button className={`nav-link ${page === 'hiw'  ? 'active' : ''}`} onClick={() => setPage('hiw')}>How it Works</button>
+                            <div ref={accessRef} className="access-wrap">
+                                <button
+                                    className={`access-btn ${accessOpen ? 'open' : ''}`}
+                                    onClick={() => setAccessOpen(o => !o)}
+                                    aria-expanded={accessOpen}
+                                    aria-label="Accessibility options"
+                                >
+                                    <span style={{fontSize:'1.1rem'}}>Aa</span> Accessibility
+                                </button>
+                                {accessOpen && (
+                                    <div className="access-panel" role="dialog" aria-label="Accessibility Options">
+                                        <div className="access-panel-title">Accessibility Options</div>
+
+                                        <div className="access-section">
+                                            <div className="access-section-label">Text Size</div>
+                                            <div className="access-opts">
+                                                <button className={`access-opt ${textSize==='normal'  ? 'on':''}`} onClick={()=>setTextSize('normal')}  style={{fontSize:'0.88rem'}}>Normal</button>
+                                                <button className={`access-opt ${textSize==='large'   ? 'on':''}`} onClick={()=>setTextSize('large')}   style={{fontSize:'1rem'  }}>Larger</button>
+                                                <button className={`access-opt ${textSize==='largest' ? 'on':''}`} onClick={()=>setTextSize('largest')} style={{fontSize:'1.12rem'}}>Largest</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="access-divider"></div>
+
+                                        <div className="access-section">
+                                            <div className="access-section-label">Read Aloud</div>
+                                            <button
+                                                className={`access-read-btn ${speaking ? 'reading' : ''}`}
+                                                onClick={toggleReadAloud}
+                                            >
+                                                {speaking ? '◼  Stop Reading' : '▶  Read This Page Aloud'}
+                                            </button>
+                                        </div>
+
+                                        <div className="access-divider"></div>
+
+                                        <div className="access-section">
+                                            <div className="access-section-label">Colour Assistance</div>
+                                            <div className="access-opts">
+                                                <button className={`access-opt ${colorMode==='standard' ? 'on':''}`} onClick={()=>setColorMode('standard')}>Standard</button>
+                                                <button className={`access-opt ${colorMode==='hc'       ? 'on':''}`} onClick={()=>setColorMode('hc')}>High Contrast</button>
+                                                <button className={`access-opt ${colorMode==='cb'       ? 'on':''}`} onClick={()=>setColorMode('cb')}>Colour Blind</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            {page === 'home' && (
+                                <button className="nav-link" onClick={() => setPage('hiw')}>How it Works</button>
+                            )}
+                            {page === 'hiw' && (
+                                <button className="nav-link" onClick={() => setPage('home')}>Home</button>
+                            )}
                         </div>
                     </nav>
 
