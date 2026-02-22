@@ -142,8 +142,8 @@ def _check_dates(bill: PatientBill) -> list[VerificationIssue]:
 def _check_math(bill: PatientBill) -> list[VerificationIssue]:
     """Engine 3: Verify total matches sum of line items."""
     issues = []
-    # charge_amount already represents the total for each line (qty × unit price)
-    computed_sum = sum(item.charge_amount for item in bill.line_items)
+    # charge_amount is the unit price; multiply by quantity for each line total
+    computed_sum = sum(item.charge_amount * item.quantity for item in bill.line_items)
     discrepancy = bill.total_billed - computed_sum
 
     if abs(discrepancy) > 100:
@@ -250,8 +250,8 @@ def _check_unbundling(bill: PatientBill) -> list[VerificationIssue]:
                         cpt_code=col2_code,
                         description=f"Unbundling: {col2_item.description}",
                         details=f"{reason} — Both billed on {date}. "
-                                f"{col2_code} (${col2_item.charge_amount:,.2f}) should not be billed separately.",
-                        potential_overcharge=col2_item.charge_amount,
+                                f"{col2_code} (${col2_item.charge_amount * col2_item.quantity:,.2f}) should not be billed separately.",
+                        potential_overcharge=col2_item.charge_amount * col2_item.quantity,
                         line_item_index=col2_idx,
                     ))
 

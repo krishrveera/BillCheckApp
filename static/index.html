@@ -1554,8 +1554,10 @@
             const criticalCount = report ? report.issues.filter(i => i.severity === 'critical').length : 0;
             const warningCount  = report ? report.issues.filter(i => i.severity === 'warning').length  : 0;
             const flaggedIndices = report ? new Set(report.issues.map(i => i.line_item_index).filter(i => i !== null)) : new Set();
-            // Derived directly from issues so it always matches the sum shown in the table
-            const totalFlagged = report ? report.issues.reduce((sum, i) => sum + (i.potential_overcharge || 0), 0) : 0;
+            // Use the backend-computed total: deduplicates same-line-item flags (takes max per line,
+            // not a double-sum) and is already capped at total_billed, so it is always < the full bill.
+            // After add/delete the handlers update report.total_flagged via calcTotalFlagged.
+            const totalFlagged = report ? report.total_flagged : 0;
 
             return (
                 <div className="container">
