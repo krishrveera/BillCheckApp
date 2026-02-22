@@ -383,7 +383,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.6;
         }
-        .answer-key li::before { content: "\uD83C\uDFAF "; }
+        .answer-key li::before { content: "🎯 "; }
 
         /* Loading */
         .spinner {
@@ -710,7 +710,7 @@
             text-align: center;
             padding: 80px 20px;
         }
-        .login-screen h2 { font-size: 1.8rem; margin-bottom: 12px; color: #2c2825; font-family: Georgia, serif; }
+        .login-screen h2 { font-size: 4rem; margin-bottom: 12px; color: #2c2825; font-family: Georgia, serif; }
         .login-screen p { color: #6b6560; margin-bottom: 30px; font-style: italic; }
         .google-btn {
             display: inline-flex;
@@ -790,6 +790,152 @@
         body.mode-cb .differentiator { background: #eff6ff; border-color: #93c5fd; color: #0369a1; }
         body.mode-cb .hiw-card h4 { color: #0f172a; }
 
+        /* Help Resources */
+        .help-intro {
+            margin-bottom: 24px;
+            padding: 20px 24px;
+            background: #f2faf5;
+            border: 1.5px solid #b6dfc6;
+            border-radius: 14px;
+        }
+        .help-intro h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2c2825;
+            font-family: Georgia, serif;
+            margin-bottom: 8px;
+        }
+        .help-intro p {
+            color: #6b6560;
+            font-size: 0.97rem;
+            line-height: 1.7;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .help-filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .help-filter-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1.5px solid #e2ddd7;
+            background: #faf8f5;
+            color: #6b6560;
+            font-size: 0.85rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .help-filter-btn:hover { border-color: #2a7d4f; color: #2a7d4f; }
+        .help-filter-btn.active { background: #eaf5ee; border-color: #2a7d4f; color: #2a7d4f; }
+        .help-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        .help-card {
+            background: #faf8f5;
+            border: 1.5px solid #e2ddd7;
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .help-card:hover { border-color: #b6dfc6; box-shadow: 0 4px 14px rgba(42,125,79,0.08); }
+        .help-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .help-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            text-transform: uppercase;
+        }
+        .help-badge-legal            { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .help-badge-medical-billing  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .help-badge-insurance        { background: #faf5ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+        .help-badge-financial        { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .help-badge-mental-health    { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .help-badge-consumer-protection { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .help-badge-healthcare-rights   { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .help-region-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #9e9893;
+            border: 1px solid #e2ddd7;
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .help-card-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2c2825;
+            font-family: Georgia, serif;
+            margin-bottom: 8px;
+        }
+        .help-card-desc {
+            color: #6b6560;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            margin-bottom: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .help-card-contacts { display: flex; flex-direction: column; gap: 6px; }
+        .help-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.87rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .help-contact-item .contact-icon { color: #9e9893; flex-shrink: 0; }
+        .help-contact-item a {
+            color: #2a7d4f;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s;
+        }
+        .help-contact-item a:hover { color: #1a5c38; text-decoration: underline; }
+        .help-contact-text { color: #3a3530; font-weight: 600; }
+        .help-disclaimer {
+            margin-top: 28px;
+            padding: 16px 20px;
+            background: #fffbf0;
+            border: 1.5px solid #f0d080;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #7a5c00;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+        }
+        .help-no-results {
+            text-align: center;
+            padding: 48px 24px;
+            color: #9e9893;
+            font-style: italic;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        body.mode-hc .help-card { background: #ffffff; border-color: #000000; }
+        body.mode-hc .help-intro { background: #f0f0f0; border-color: #000000; }
+        body.mode-hc .help-filter-btn { background: #ffffff; border-color: #000000; color: #000000; }
+        body.mode-hc .help-filter-btn.active { background: #000000; color: #ffffff; }
+        body.mode-hc .help-region-badge { background: #e8e8e8; border-color: #000000; color: #333333; }
+        body.mode-hc .help-disclaimer { background: #fffbe0; border-color: #885500; color: #444400; }
+
         @media (max-width: 768px) {
             .dashboard { grid-template-columns: repeat(2, 1fr); }
             .patients-grid { grid-template-columns: 1fr; }
@@ -799,6 +945,7 @@
             .pipeline-large { gap: 10px; }
             .pipeline-large-step { width: 110px; padding: 16px 12px; }
             .access-panel { width: 290px; }
+            .help-cards-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -806,6 +953,139 @@
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+
+        const HELP_RESOURCES = [
+            // Legal
+            { category: 'legal', name: 'Legal Services Corporation', phone: '202-295-1500', website: 'https://www.lsc.gov', desc: 'Federally funded nonprofit providing free civil legal aid to low-income Americans for billing disputes, debt collection, and consumer protection cases.', region: 'US' },
+            { category: 'legal', name: 'LawHelp.org', website: 'https://www.lawhelp.org', desc: 'State-by-state directory of free and low-cost legal aid organisations — searchable by state and issue type, including consumer debt and billing disputes.', region: 'US' },
+            { category: 'legal', name: 'ABA Lawyer Referral', phone: '800-285-2221', website: 'https://www.findlegalhelp.org', desc: 'American Bar Association lawyer referral service. Many bar associations offer free or low-cost initial consultations for billing fraud and contract disputes.', region: 'US' },
+            { category: 'legal', name: 'National Consumer Law Center', phone: '617-542-8010', website: 'https://www.nclc.org', desc: 'Advocates for low-income consumers on debt collection, predatory lending, and billing fraud. Provides free consumer guides and attorney connections.', region: 'US' },
+            // Medical Billing
+            { category: 'medical-billing', name: 'Patient Advocate Foundation', phone: '800-532-5274', website: 'https://www.patientadvocate.org', desc: 'Free national nonprofit providing case management for patients. Helps navigate insurance appeals, medical billing disputes, and access to care.', region: 'US' },
+            { category: 'medical-billing', name: 'Dollar For', website: 'https://dollarfor.org', desc: 'Nonprofit that helps patients apply for hospital charity care (required by law at nonprofit hospitals). Has helped eliminate millions in medical debt. Free service.', region: 'US' },
+            { category: 'medical-billing', name: 'Medical Billing Advocates of America', phone: '855-203-7058', website: 'https://billadvocates.com', desc: 'Professional patient billing advocates who review medical bills for errors and negotiate with providers and insurers on your behalf.', region: 'US' },
+            { category: 'medical-billing', name: 'RIP Medical Debt', website: 'https://ripmedicaldebt.org', desc: 'Nonprofit that purchases and forgives medical debt in bulk for people in financial hardship. No application required — beneficiaries are notified by mail.', region: 'US' },
+            // Insurance
+            { category: 'insurance', name: 'EBSA (Dept. of Labor)', phone: '866-444-3272', website: 'https://www.dol.gov/agencies/ebsa', desc: 'Regulates employer-sponsored health plans. Free assistance from benefits advisors for claim denials and billing issues with employer-provided health insurance.', region: 'US' },
+            { category: 'insurance', name: 'CMS / Medicare Helpline', phone: '800-633-4227', website: 'https://www.medicare.gov', desc: 'Federal helpline for Medicare billing disputes, appeals, and fraud reports. TTY: 877-486-2048. Available 24/7.', region: 'US' },
+            { category: 'insurance', name: 'No Surprises Act Help Desk', phone: '800-985-3059', website: 'https://www.cms.gov/nosurprises', desc: 'Dedicated helpline for complaints about the No Surprises Act — which bans unexpected out-of-network bills for emergency care and certain non-emergency situations.', region: 'US' },
+            { category: 'insurance', name: 'State Insurance Commissioner', website: 'https://content.naic.org/state-insurance-departments', desc: 'Every US state has an Insurance Department that regulates insurers and handles consumer complaints. Use the NAIC directory to find your state\'s office.', region: 'US' },
+            // Financial Counseling
+            { category: 'financial', name: 'NFCC (Nat\'l Foundation for Credit Counseling)', phone: '800-388-2227', website: 'https://www.nfcc.org', desc: 'Largest nonprofit credit counseling network in the US. Offers free or low-cost budget counseling and debt management plans, including for medical debt.', region: 'US' },
+            { category: 'financial', name: '211 Helpline', phone: '211', website: 'https://www.211.org', desc: 'Free 24/7 referral service connecting people to local financial assistance, bill pay help, food banks, housing, and more. Available across most of the US and some Canadian provinces.', region: 'US / Canada' },
+            { category: 'financial', name: 'GreenPath Financial Wellness', phone: '877-337-3399', website: 'https://www.greenpath.com', desc: 'HUD-approved nonprofit offering free financial counseling, debt management support, and student loan counseling. NFCC member.', region: 'US' },
+            { category: 'financial', name: 'StepChange Debt Charity', phone: '0800 138 1111', website: 'https://www.stepchange.org', desc: "UK's leading free debt advice charity. Offers free confidential debt advice and debt management plans for UK residents.", region: 'UK' },
+            { category: 'financial', name: 'Citizens Advice', phone: '0800 144 8848', website: 'https://www.citizensadvice.org.uk', desc: 'Free, confidential advice on debt, bills, consumer rights, and more. Extensive network across England, Wales, Scotland, and Northern Ireland.', region: 'UK' },
+            { category: 'financial', name: 'National Debtline', phone: '0808 808 4000', website: 'https://www.nationaldebtline.org', desc: 'Free, independent debt advice for UK residents by phone or online. Run by the Money Advice Trust.', region: 'UK' },
+            { category: 'financial', name: 'AFCA (Australian Financial Complaints Authority)', phone: '1800 931 678', website: 'https://www.afca.org.au', desc: 'Free dispute resolution for financial complaints including billing and insurance disputes in Australia.', region: 'Australia' },
+            // Mental Health
+            { category: 'mental-health', name: 'SAMHSA National Helpline', phone: '800-662-4357', website: 'https://www.samhsa.gov/find-help/national-helpline', desc: 'Free, confidential, 24/7 referral service for mental health and substance use disorders. Connects to local services for those experiencing stress from financial or medical trauma. (English & Spanish)', region: 'US' },
+            { category: 'mental-health', name: '988 Suicide & Crisis Lifeline', phone: '988', website: 'https://988lifeline.org', desc: 'Free, 24/7 crisis support for anyone experiencing mental health crises or overwhelming emotional distress — including those overwhelmed by medical debt or billing fraud. Chat available online.', region: 'US' },
+            { category: 'mental-health', name: 'Crisis Text Line', text: 'Text HOME to 741741', website: 'https://www.crisistextline.org', desc: 'Free, 24/7 text-based crisis counseling for all types of emotional crisis including financial stress and medical trauma. UK: text SHOUT to 85258 | Canada: 686868 | Ireland: 50808.', region: 'US / UK / CA / IE' },
+            { category: 'mental-health', name: 'NAMI Helpline', phone: '800-950-6264', website: 'https://www.nami.org/help', desc: 'Free peer-support helpline (Mon–Fri) staffed by trained volunteers. Offers information, referrals, and emotional support for the psychological burden of medical debt. Text NAMI to 741741.', region: 'US' },
+            { category: 'mental-health', name: 'Open Path Collective', website: 'https://openpathcollective.org', desc: 'Nonprofit network of therapists offering sliding-scale therapy sessions ($30–$80/session) for those in financial hardship who need mental health support.', region: 'US' },
+            { category: 'mental-health', name: 'Samaritans', phone: '116 123', website: 'https://www.samaritans.org', desc: 'Free, 24/7 emotional support for anyone in distress — including those overwhelmed by debt or financial crisis. Calls are completely free and confidential.', region: 'UK / Ireland' },
+            { category: 'mental-health', name: 'Beyond Blue', phone: '1300 22 4636', website: 'https://www.beyondblue.org.au', desc: 'Free 24/7 mental health support for Australians, including counseling for stress related to financial hardship and medical issues.', region: 'Australia' },
+            // Consumer Protection
+            { category: 'consumer-protection', name: 'FTC (Federal Trade Commission)', phone: '877-382-4357', website: 'https://reportfraud.ftc.gov', desc: 'Primary US consumer protection agency. Report unfair or deceptive billing practices, billing fraud, identity theft, and debt collection harassment (FDCPA violations).', region: 'US' },
+            { category: 'consumer-protection', name: 'CFPB (Consumer Financial Protection Bureau)', phone: '855-411-2372', website: 'https://www.consumerfinance.gov/complaint/', desc: 'Federal agency handling complaints about debt collectors, medical debt collection, and billing disputes with financial institutions. Complaints are forwarded to the company for response.', region: 'US' },
+            { category: 'consumer-protection', name: 'HHS OIG Fraud Hotline', phone: '800-447-8477', website: 'https://oig.hhs.gov/fraud/report-fraud/', desc: 'Report Medicare and Medicaid fraud, billing fraud by healthcare providers, and abuse within HHS-funded programs. Anonymous reporting accepted. TTY: 800-377-4950.', region: 'US' },
+            { category: 'consumer-protection', name: 'State Attorney General', website: 'https://www.naag.org/find-my-ag/', desc: "Each US state's Attorney General has a consumer protection division investigating billing fraud, deceptive practices, and unfair business conduct. Use the NAAG directory to find yours.", region: 'US' },
+            { category: 'consumer-protection', name: 'Better Business Bureau (BBB)', website: 'https://www.bbb.org', desc: 'File complaints against businesses for billing disputes and deceptive practices. BBB mediates disputes and publishes business ratings. Free service.', region: 'US / Canada' },
+            { category: 'consumer-protection', name: 'Competition & Markets Authority (CMA)', phone: '020 3738 6000', website: 'https://www.gov.uk/cma', desc: "UK's primary consumer protection and competition regulator. Handles complaints about unfair business practices and billing issues.", region: 'UK' },
+            { category: 'consumer-protection', name: 'ACCC', phone: '1300 302 502', website: 'https://www.accc.gov.au', desc: "Australia's consumer protection regulator. Handles complaints about billing fraud, misleading conduct, and unfair contract terms.", region: 'Australia' },
+            // Healthcare Rights
+            { category: 'healthcare-rights', name: 'SHIP (State Health Insurance Assistance)', phone: '877-839-2675', website: 'https://www.shiphelp.org', desc: 'Free, unbiased counseling for Medicare beneficiaries on insurance choices, billing disputes, and appeals. Every state has trained counselors. Federally funded.', region: 'US' },
+            { category: 'healthcare-rights', name: 'Medicare Rights Center', phone: '800-333-4114', website: 'https://www.medicarerights.org', desc: "One of the largest independent Medicare counseling organisations. Free counseling on patient rights, billing disputes, and insurance appeals.", region: 'US' },
+            { category: 'healthcare-rights', name: 'OCR / HIPAA Rights (HHS)', phone: '800-368-1019', website: 'https://www.hhs.gov/ocr/', desc: 'Enforces patient privacy rights under HIPAA and civil rights protections in healthcare. Also handles complaints about discriminatory billing practices. TTY: 800-537-7697.', region: 'US' },
+            { category: 'healthcare-rights', name: 'Patient Rights Advocate', website: 'https://www.patientrightsadvocate.org', desc: 'Nonprofit focused on hospital price transparency. Helps patients understand what they should be billed under the Hospital Price Transparency Rule.', region: 'US' },
+        ];
+
+        const HELP_CATEGORIES = [
+            { id: 'all',                  label: 'All Resources' },
+            { id: 'legal',                label: 'Legal Help' },
+            { id: 'medical-billing',      label: 'Medical Billing' },
+            { id: 'insurance',            label: 'Insurance Disputes' },
+            { id: 'financial',            label: 'Financial Counseling' },
+            { id: 'mental-health',        label: 'Mental Health' },
+            { id: 'consumer-protection',  label: 'Consumer Protection' },
+            { id: 'healthcare-rights',    label: 'Healthcare Rights' },
+        ];
+
+        function HelpResources() {
+            const [activeCategory, setActiveCategory] = useState('all');
+            const filtered = activeCategory === 'all'
+                ? HELP_RESOURCES
+                : HELP_RESOURCES.filter(r => r.category === activeCategory);
+
+            return (
+                <div>
+                    <div className="help-intro">
+                        <h3>Support & Resources</h3>
+                        <p>
+                            If your bill has errors, you don't have to face them alone. These organisations — covering the US, UK, Australia, Canada, and more — can help with legal disputes, billing advocacy, insurance appeals, financial hardship, and mental health support.
+                        </p>
+                    </div>
+
+                    <div className="help-filter-bar">
+                        {HELP_CATEGORIES.map(c => (
+                            <button
+                                key={c.id}
+                                className={`help-filter-btn ${activeCategory === c.id ? 'active' : ''}`}
+                                onClick={() => setActiveCategory(c.id)}
+                            >
+                                {c.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {filtered.length === 0 ? (
+                        <div className="help-no-results">No resources found for this category.</div>
+                    ) : (
+                        <div className="help-cards-grid">
+                            {filtered.map((r, idx) => (
+                                <div key={idx} className="help-card">
+                                    <div className="help-card-header">
+                                        <span className={`help-badge help-badge-${r.category}`}>
+                                            {HELP_CATEGORIES.find(c => c.id === r.category)?.label}
+                                        </span>
+                                        <span className="help-region-badge">{r.region}</span>
+                                    </div>
+                                    <div className="help-card-name">{r.name}</div>
+                                    <div className="help-card-desc">{r.desc}</div>
+                                    <div className="help-card-contacts">
+                                        {r.phone && (
+                                            <div className="help-contact-item">
+                                                <span className="contact-icon">&#9990;</span>
+                                                <a href={`tel:${r.phone.replace(/[^0-9+]/g, '')}`}>{r.phone}</a>
+                                            </div>
+                                        )}
+                                        {r.text && (
+                                            <div className="help-contact-item">
+                                                <span className="contact-icon">&#9993;</span>
+                                                <span className="help-contact-text">{r.text}</span>
+                                            </div>
+                                        )}
+                                        {r.website && (
+                                            <div className="help-contact-item">
+                                                <span className="contact-icon">&#9675;</span>
+                                                <a href={r.website} target="_blank" rel="noopener noreferrer">
+                                                    {r.website.replace(/^https?:\/\//, '')}
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="help-disclaimer">
+                        <strong>Important:</strong> Phone numbers and websites are for established organisations and are accurate as of early 2026, but contact details can change — always verify via official .gov or .org domains before calling. If you are in the US and received an unexpected out-of-network bill, you likely have protections under the <strong>No Surprises Act</strong> — call <strong>800-985-3059</strong> first. All nonprofit hospitals are required by law to offer financial assistance (charity care) — always ask the billing department before paying or going to collections.
+                    </div>
+                </div>
+            );
+        }
 
         function HowItWorks() {
             return (
@@ -917,6 +1197,14 @@
             const [colorMode, setColorMode] = useState('standard'); // 'standard' | 'hc' | 'cb'
             const [speaking, setSpeaking] = useState(false);
             const accessRef = useRef(null);
+            const resultsRef = useRef(null);
+
+            // Scroll to results when a report arrives
+            useEffect(() => {
+                if (report && resultsRef.current) {
+                    resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, [report]);
 
             // Apply text size — target html so all rem units scale
             useEffect(() => {
@@ -1211,52 +1499,6 @@
                                 <p>We check your medical bill for errors — simply and clearly.</p>
                             </div>
 
-                            <div className="section-label">Select a patient bill to review</div>
-                            <div className="patients-grid">
-                                {patients.map(p => (
-                                    <div
-                                        key={p.id}
-                                        className={`patient-card ${selectedId === p.id ? 'selected' : ''}`}
-                                        onClick={() => selectPatient(p.id)}
-                                    >
-                                        <h3>{p.name}</h3>
-                                        <div className="mrn">MRN: {p.mrn} &bull; {p.facility}</div>
-                                        <div className="details">
-                                            <div>
-                                                <div className="detail-label">Admitted</div>
-                                                <div className="detail-value">{p.admission_date}</div>
-                                            </div>
-                                            <div>
-                                                <div className="detail-label">Discharged</div>
-                                                <div className="detail-value">{p.discharge_date}</div>
-                                            </div>
-                                            <div>
-                                                <div className="detail-label">Diagnosis</div>
-                                                <div className="detail-value">{p.primary_diagnosis}</div>
-                                            </div>
-                                            <div>
-                                                <div className="detail-label">Line Items</div>
-                                                <div className="detail-value">{p.line_items_count}</div>
-                                            </div>
-                                        </div>
-                                        <div className="total">${p.total_billed.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                                        <div className="error-badge">{p.known_error_count} known errors embedded</div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <button
-                                className={`verify-btn ${loading ? 'loading' : ''}`}
-                                onClick={runVerification}
-                                disabled={!selectedId || loading}
-                            >
-                                {loading
-                                    ? (<><span className="spinner"></span>Checking your bill...</>)
-                                    : 'Check This Bill for Errors'}
-                            </button>
-
-                            <div className="section-divider">Or upload your own bill</div>
-
                             <div
                                 className={`upload-section ${dragover ? 'dragover' : ''}`}
                                 onDragOver={(e) => { e.preventDefault(); setDragover(true); }}
@@ -1297,7 +1539,7 @@
 
                             {report && (
                                 <>
-                                    <div className="dashboard">
+                                    <div className="dashboard" ref={resultsRef}>
                                         <div className="dash-card">
                                             <div className="label">Safety Score</div>
                                             <div className={`value ${gradeClass(report.grade)}`}>{report.safety_score}</div>
@@ -1333,7 +1575,7 @@
                                     )}
 
                                     <div className="tabs">
-                                        {['issues', 'bill', 'dispute', 'phone', ...(isUploadResult ? [] : ['answer-key'])].map(tab => (
+                                        {['issues', 'bill', 'dispute', 'phone', 'help', ...(isUploadResult ? [] : ['answer-key'])].map(tab => (
                                             <button
                                                 key={tab}
                                                 className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -1343,6 +1585,7 @@
                                                  tab === 'bill'       ? 'Full Bill' :
                                                  tab === 'dispute'    ? 'Dispute Letter' :
                                                  tab === 'phone'      ? 'Phone Script' :
+                                                 tab === 'help'       ? 'Get Help' :
                                                                         'Answer Key'}
                                             </button>
                                         ))}
@@ -1435,6 +1678,8 @@
                                             <div className="preformatted">{report.phone_script}</div>
                                         )}
 
+                                        {activeTab === 'help' && <HelpResources />}
+
                                         {activeTab === 'answer-key' && (
                                             <>
                                                 <p style={{color: '#6b6560', marginBottom: 18, fontSize: '1rem', fontStyle: 'italic'}}>
@@ -1450,6 +1695,52 @@
                                     </div>
                                 </>
                             )}
+
+                            <div className="section-divider">Or try an example</div>
+
+                            <div className="section-label">Examples</div>
+                            <div className="patients-grid">
+                                {patients.map(p => (
+                                    <div
+                                        key={p.id}
+                                        className={`patient-card ${selectedId === p.id ? 'selected' : ''}`}
+                                        onClick={() => selectPatient(p.id)}
+                                    >
+                                        <h3>{p.name}</h3>
+                                        <div className="mrn">MRN: {p.mrn} &bull; {p.facility}</div>
+                                        <div className="details">
+                                            <div>
+                                                <div className="detail-label">Admitted</div>
+                                                <div className="detail-value">{p.admission_date}</div>
+                                            </div>
+                                            <div>
+                                                <div className="detail-label">Discharged</div>
+                                                <div className="detail-value">{p.discharge_date}</div>
+                                            </div>
+                                            <div>
+                                                <div className="detail-label">Diagnosis</div>
+                                                <div className="detail-value">{p.primary_diagnosis}</div>
+                                            </div>
+                                            <div>
+                                                <div className="detail-label">Line Items</div>
+                                                <div className="detail-value">{p.line_items_count}</div>
+                                            </div>
+                                        </div>
+                                        <div className="total">${p.total_billed.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                        <div className="error-badge">{p.known_error_count} known errors embedded</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                className={`verify-btn ${loading ? 'loading' : ''}`}
+                                onClick={runVerification}
+                                disabled={!selectedId || loading}
+                            >
+                                {loading
+                                    ? (<><span className="spinner"></span>Checking your bill...</>)
+                                    : 'Check This Bill for Errors'}
+                            </button>
 
                             <div className="footer">
                                 MedClear &mdash; Your bill is read carefully. Every charge is checked. Results you can trust.

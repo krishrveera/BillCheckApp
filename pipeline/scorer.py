@@ -2,6 +2,25 @@ from models import PatientBill, VerificationIssue, VerificationReport, IssueSeve
 from collections import Counter
 
 
+def _calc_total_flagged(issues: list[VerificationIssue], total_billed: float) -> float:
+    """
+    Sum potential overcharges without double-counting the same line item.
+    When multiple engines flag the same line item, take the largest overcharge.
+    Issues with no line_item_index (e.g. math errors) are always included in full.
+    The result is capped at total_billed.
+    """
+    per_line_max: dict[int, float] = {}
+    ungrouped = 0.0
+    for issue in issues:
+        if issue.line_item_index is None:
+            ungrouped += issue.potential_overcharge
+        else:
+            idx = issue.line_item_index
+            per_line_max[idx] = max(per_line_max.get(idx, 0.0), issue.potential_overcharge)
+    total = ungrouped + sum(per_line_max.values())
+    return min(total, total_billed)
+
+
 def calculate_safety_score(issues: list[VerificationIssue]) -> tuple[int, str]:
     """Calculate a safety score (0-100) and letter grade based on issues found."""
     score = 100
@@ -44,7 +63,7 @@ def _build_summary(issues: list[VerificationIssue]) -> str:
         t.replace("_", " ") for t in type_counts
     )
 
-    total_overcharge = sum(i.potential_overcharge for i in issues)
+    total_overcharge = _calc_total_flagged(issues, float('inf'))
 
     parts = [f"Found {len(issues)} issue(s):"]
     if critical:
@@ -60,11 +79,11 @@ def _build_summary(issues: list[VerificationIssue]) -> str:
     return summary
 
 
-def _generate_dispute_letter(bill: PatientBill, issues: list[VerificationIssue]) -> str:
+def _generate_dispute_letter(bill: PatientBill, issues: list[VerificationIssue], total_flagged: float) -> str:
     """Generate a formal dispute letter."""
     critical = [i for i in issues if i.severity == IssueSeverity.critical]
     warnings = [i for i in issues if i.severity == IssueSeverity.warning]
-    total_overcharge = sum(i.potential_overcharge for i in issues)
+    total_overcharge = total_flagged
 
     letter = f"""FORMAL DISPUTE OF MEDICAL BILLING CHARGES
 
@@ -126,9 +145,9 @@ cc: State Insurance Commissioner
     return letter
 
 
-def _generate_phone_script(bill: PatientBill, issues: list[VerificationIssue]) -> str:
+def _generate_phone_script(bill: PatientBill, issues: list[VerificationIssue], total_flagged: float) -> str:
     """Generate a step-by-step phone script for disputing the bill."""
-    total_overcharge = sum(i.potential_overcharge for i in issues)
+    total_overcharge = total_flagged
 
     script = f"""PHONE DISPUTE SCRIPT — {bill.patient_name}
 {'=' * 50}
@@ -192,10 +211,10 @@ IMPORTANT: If they are uncooperative:
 def generate_report(bill: PatientBill, issues: list[VerificationIssue]) -> VerificationReport:
     """Generate the complete verification report."""
     score, grade = calculate_safety_score(issues)
-    total_flagged = sum(i.potential_overcharge for i in issues)
+    total_flagged = _calc_total_flagged(issues, bill.total_billed)
     summary = _build_summary(issues)
-    dispute_letter = _generate_dispute_letter(bill, issues)
-    phone_script = _generate_phone_script(bill, issues)
+    dispute_letter = _generate_dispute_letter(bill, issues, total_flagged)
+    phone_script = _generate_phone_script(bill, issues, total_flagged)
 
     return VerificationReport(
         patient_name=bill.patient_name,
