@@ -3,3 +3,7 @@ uvicorn
 anthropic
 pydantic
 httpx
+authlib
+itsdangerous
+python-dotenv
+python-multipart
