@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedClear — Medical Bill Verification</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2322c55e'/><text x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'>M</text></svg>">
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -432,8 +433,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             font-weight: 600;
         }
-
-        /* Pipeline section card */
         .hiw-pipeline-section {
             background: #ffffff;
             border: 2px solid #e2ddd7;
@@ -487,15 +486,9 @@
             line-height: 1.5;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
-        .pipeline-large-step.ai {
-            background: #f5f0ff;
-            border: 2px solid #d4c5f9;
-        }
+        .pipeline-large-step.ai { background: #f5f0ff; border: 2px solid #d4c5f9; }
         .pipeline-large-step.ai .step-name { color: #6d28d9; }
-        .pipeline-large-step.det {
-            background: #f0faf4;
-            border: 2px solid #b6dfc6;
-        }
+        .pipeline-large-step.det { background: #f0faf4; border: 2px solid #b6dfc6; }
         .pipeline-large-step.det .step-name { color: #2a7d4f; }
 
         .pipeline-large-arrow {
@@ -505,7 +498,6 @@
             flex-shrink: 0;
             margin-top: -16px;
         }
-
         .legend {
             display: flex;
             gap: 28px;
@@ -524,8 +516,6 @@
         .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
         .legend-dot.ai  { background: #7c3aed; }
         .legend-dot.det { background: #2a7d4f; }
-
-        /* HIW info cards */
         .hiw-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1155,7 +1145,7 @@
                     {(!authState.oauthConfigured || authState.authenticated) && !authState.loading && (
                     <>
                     {/* Nav */}
-                    <nav className="nav" style={{justifyContent: page === 'home' ? 'flex-end' : 'space-between'}}>
+                    <nav className="nav">
                         {page === 'hiw' && (
                             <button className="nav-brand-btn" onClick={() => setPage('home')}>Med<span>Clear</span></button>
                         )}
