@@ -90,6 +90,8 @@ def _patient_2_robert_thompson() -> dict:
         BillLineItem(cpt_code="94640", description="Nebulizer treatment", charge_amount=175.00, date_of_service="2025-10-16", quantity=2),
         BillLineItem(cpt_code="80053", description="Comprehensive metabolic panel", charge_amount=195.00, date_of_service="2025-10-16", quantity=1),
         BillLineItem(cpt_code="96360", description="IV hydration", charge_amount=385.00, date_of_service="2025-10-16", quantity=1),
+        # ERROR 6 - DOSAGE ANOMALY: 50 units of morphine = 500mg, max safe daily is 100mg
+        BillLineItem(cpt_code="J2270", description="Morphine sulfate injection, 10mg", charge_amount=35.00, date_of_service="2025-10-16", quantity=50),
         # Day 3 (2025-10-17)
         BillLineItem(cpt_code="99232", description="Subsequent hospital care", charge_amount=580.00, date_of_service="2025-10-17", quantity=1),
         BillLineItem(cpt_code="94640", description="Nebulizer treatment", charge_amount=175.00, date_of_service="2025-10-17", quantity=2),
@@ -129,6 +131,7 @@ def _patient_2_robert_thompson() -> dict:
         "IMPLAUSIBLE: Laparoscopic appendectomy (44970, $18,500) is not plausible for heart failure (I50.23)",
         "DATE ERROR: CMP (80053, $195) billed on 2025-10-21, one day after discharge (2025-10-20)",
         "DUPLICATE: Echocardiography (93306, $2,100) charged twice on 2025-10-15",
+        "DOSAGE ANOMALY: Morphine (J2270) billed 50 units (500 mg) on 2025-10-16 — max safe daily dose is 100 mg (5.0x the limit)",
     ]
 
     return {"id": "patient-2", "bill": bill, "known_errors": known_errors}

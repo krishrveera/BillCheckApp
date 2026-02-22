@@ -53,6 +53,7 @@ class IssueType(str, Enum):
     unbundling = "unbundling"
     implausible_procedure = "implausible_procedure"
     quantity_error = "quantity_error"
+    dosage_anomaly = "dosage_anomaly"
 
 
 class VerificationIssue(BaseModel):

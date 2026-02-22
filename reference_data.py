@@ -297,3 +297,41 @@ CMS_FEE_SCHEDULE = CMS_FEE_SCHEDULE_FALLBACK
 
 CMS_OVERCHARGE_MULTIPLIER = 3.0
 CMS_SEVERE_OVERCHARGE_MULTIPLIER = 5.0
+
+
+# ── Drug dosage safety limits ───────────────────────────────────────────
+# Keyed by HCPCS J-code.  unit_mg = mg per billing unit, max_daily_mg =
+# maximum reasonable total mg a patient should receive in one calendar day.
+# Sources: FDA prescribing information / clinical pharmacology references.
+DRUG_DOSAGE_LIMITS: dict[str, dict] = {
+    "J2270": {
+        "drug": "Morphine sulfate",
+        "unit_mg": 10.0,
+        "max_daily_mg": 100.0,      # 10 mg × 10 doses
+        "route": "injection",
+    },
+    "J3010": {
+        "drug": "Fentanyl citrate",
+        "unit_mg": 0.1,
+        "max_daily_mg": 2.0,         # 0.1 mg × 20 doses max
+        "route": "injection",
+    },
+    "J1885": {
+        "drug": "Ketorolac tromethamine",
+        "unit_mg": 15.0,
+        "max_daily_mg": 120.0,       # 30 mg q6h × 4
+        "route": "injection",
+    },
+    "J0290": {
+        "drug": "Ampicillin",
+        "unit_mg": 500.0,
+        "max_daily_mg": 12000.0,     # 2 g q4h
+        "route": "injection",
+    },
+    "J2550": {
+        "drug": "Promethazine HCl",
+        "unit_mg": 50.0,
+        "max_daily_mg": 150.0,       # 50 mg × 3
+        "route": "injection",
+    },
+}

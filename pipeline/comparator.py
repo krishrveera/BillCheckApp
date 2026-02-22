@@ -1,5 +1,5 @@
 """
-THE CORE — 6 Deterministic Verification Engines
+THE CORE — 7 Deterministic Verification Engines
 
 NO LLM CALLS. Pure deterministic logic. This is the differentiator.
 Every flag maps to a specific rule, a specific CPT code, and a specific dollar amount.
@@ -16,6 +16,7 @@ from reference_data import (
     ICD10_PLAUSIBLE_CPTS,
     CMS_OVERCHARGE_MULTIPLIER,
     CMS_SEVERE_OVERCHARGE_MULTIPLIER,
+    DRUG_DOSAGE_LIMITS,
 )
 from pipeline.cms_api import build_fee_schedule
 
@@ -54,7 +55,7 @@ def _build_live_fee_schedule(bill: PatientBill) -> dict[str, dict]:
 
 
 def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
-    """Run all 6 deterministic verification engines against a bill."""
+    """Run all 7 deterministic verification engines against a bill."""
     fee_schedule = _build_live_fee_schedule(bill)
     issues = []
     issues.extend(_check_duplicates(bill))
@@ -63,6 +64,7 @@ def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
     issues.extend(_check_cms_benchmarks(bill, fee_schedule))
     issues.extend(_check_unbundling(bill))
     issues.extend(_check_plausibility(bill))
+    issues.extend(_check_dosage_anomalies(bill))
     return issues
 
 
@@ -308,5 +310,65 @@ def _check_plausibility(bill: PatientBill) -> list[VerificationIssue]:
                 potential_overcharge=item.charge_amount * item.quantity,
                 line_item_index=idx,
             ))
+
+    return issues
+
+
+def _check_dosage_anomalies(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 7: Flag abnormally high medication dosages.
+
+    For each calendar day, sum the total mg billed per drug (J-code) and
+    compare against the clinically accepted maximum daily dose from
+    DRUG_DOSAGE_LIMITS.  Also flag any single line item whose quantity alone
+    exceeds the daily limit.
+    """
+    issues = []
+
+    # Accumulate total units per drug per date
+    daily_usage: dict[str, dict[str, list[tuple[int, int]]]] = defaultdict(
+        lambda: defaultdict(list)
+    )  # date -> jcode -> [(line_idx, qty), ...]
+
+    for idx, item in enumerate(bill.line_items):
+        code = (item.cpt_code or "").strip().upper()
+        if code in DRUG_DOSAGE_LIMITS:
+            daily_usage[item.date_of_service][code].append((idx, item.quantity))
+
+    for date, drugs in daily_usage.items():
+        for jcode, entries in drugs.items():
+            ref = DRUG_DOSAGE_LIMITS[jcode]
+            total_units = sum(qty for _, qty in entries)
+            total_mg = total_units * ref["unit_mg"]
+            max_mg = ref["max_daily_mg"]
+
+            if total_mg > max_mg:
+                ratio = total_mg / max_mg
+                first_idx = entries[0][0]
+                first_item = bill.line_items[first_idx]
+
+                if ratio >= 5.0:
+                    severity = IssueSeverity.critical
+                    label = "Dangerously high"
+                elif ratio >= 2.0:
+                    severity = IssueSeverity.critical
+                    label = "Excessive"
+                else:
+                    severity = IssueSeverity.warning
+                    label = "Elevated"
+
+                issues.append(VerificationIssue(
+                    issue_type=IssueType.dosage_anomaly,
+                    severity=severity,
+                    cpt_code=jcode,
+                    description=f"{label} dosage: {ref['drug']}",
+                    details=(
+                        f"{ref['drug']} ({jcode}) billed {total_units} unit(s) on {date}, "
+                        f"totaling {total_mg:,.1f} mg. "
+                        f"Maximum recommended daily dose is {max_mg:,.1f} mg "
+                        f"({ratio:.1f}x the safe limit)."
+                    ),
+                    potential_overcharge=first_item.charge_amount * max(total_units - int(max_mg / ref["unit_mg"]), 0),
+                    line_item_index=first_idx,
+                ))
 
     return issues
