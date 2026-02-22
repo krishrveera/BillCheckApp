@@ -340,3 +340,39 @@ DRUG_DOSAGE_LIMITS: dict[str, dict] = {
         "route": "injection",
     },
 }
+
+
+# ── Phantom billing detection data ─────────────────────────────────────
+
+# Maximum number of distinct procedures (unique CPT codes) that can
+# reasonably be performed on a single patient in one calendar day.
+MAX_PROCEDURES_PER_DAY = 12
+
+# Average procedure durations in minutes (for time-overlap detection).
+# Only major procedures that occupy a room/surgeon for extended periods.
+PROCEDURE_DURATION_MINUTES: dict[str, int] = {
+    "44950": 90,   # open appendectomy
+    "44970": 60,   # lap appendectomy
+    "47562": 75,   # lap cholecystectomy
+    "47563": 90,   # lap cholecystectomy w/ cholangiography
+    "27447": 120,  # total knee arthroplasty
+    "27130": 120,  # total hip arthroplasty
+    "33533": 240,  # CABG
+    "93458": 60,   # left heart catheterization
+    "70553": 45,   # MRI brain
+    "72148": 40,   # MRI lumbar
+    "74177": 30,   # CT abdomen/pelvis
+}
+
+# Mutually exclusive procedure pairs — cannot both be performed on the
+# same patient on the same day.
+MUTUALLY_EXCLUSIVE_PROCEDURES: list[tuple[str, str, str]] = [
+    ("44950", "44970", "Open appendectomy and laparoscopic appendectomy are mutually exclusive — only one approach is used"),
+    ("47562", "47563", "Lap cholecystectomy without and with cholangiography are mutually exclusive"),
+    ("27447", "27130", "Total knee and total hip arthroplasty on the same day is extremely rare and likely a billing error"),
+    ("74176", "74177", "CT abdomen without contrast and with contrast are mutually exclusive (one scan is performed)"),
+    ("93005", "93000", "ECG tracing only should not appear alongside complete ECG — complete ECG already includes tracing"),
+    ("99291", "99231", "Critical care and subsequent hospital care on the same day are mutually exclusive E&M levels"),
+    ("99291", "99232", "Critical care and subsequent hospital care on the same day are mutually exclusive E&M levels"),
+    ("99291", "99233", "Critical care and subsequent hospital care on the same day are mutually exclusive E&M levels"),
+]

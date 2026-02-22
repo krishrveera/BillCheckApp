@@ -54,6 +54,7 @@ class IssueType(str, Enum):
     implausible_procedure = "implausible_procedure"
     quantity_error = "quantity_error"
     dosage_anomaly = "dosage_anomaly"
+    phantom_billing = "phantom_billing"
 
 
 class VerificationIssue(BaseModel):

@@ -1,5 +1,5 @@
 """
-THE CORE — 7 Deterministic Verification Engines
+THE CORE — 8 Deterministic Verification Engines
 
 NO LLM CALLS. Pure deterministic logic. This is the differentiator.
 Every flag maps to a specific rule, a specific CPT code, and a specific dollar amount.
@@ -17,6 +17,9 @@ from reference_data import (
     CMS_OVERCHARGE_MULTIPLIER,
     CMS_SEVERE_OVERCHARGE_MULTIPLIER,
     DRUG_DOSAGE_LIMITS,
+    MAX_PROCEDURES_PER_DAY,
+    PROCEDURE_DURATION_MINUTES,
+    MUTUALLY_EXCLUSIVE_PROCEDURES,
 )
 from pipeline.cms_api import build_fee_schedule
 
@@ -55,7 +58,7 @@ def _build_live_fee_schedule(bill: PatientBill) -> dict[str, dict]:
 
 
 def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
-    """Run all 7 deterministic verification engines against a bill."""
+    """Run all 8 deterministic verification engines against a bill."""
     fee_schedule = _build_live_fee_schedule(bill)
     issues = []
     issues.extend(_check_duplicates(bill))
@@ -65,6 +68,7 @@ def verify_bill(bill: PatientBill) -> list[VerificationIssue]:
     issues.extend(_check_unbundling(bill))
     issues.extend(_check_plausibility(bill))
     issues.extend(_check_dosage_anomalies(bill))
+    issues.extend(_check_phantom_billing(bill))
     return issues
 
 
@@ -396,6 +400,88 @@ def _check_dosage_anomalies(bill: PatientBill) -> list[VerificationIssue]:
                     ),
                     potential_overcharge=first_item.charge_amount * max(total_units - int(max_mg / ref["unit_mg"]), 0),
                     line_item_index=first_idx,
+                ))
+
+    return issues
+
+
+def _check_phantom_billing(bill: PatientBill) -> list[VerificationIssue]:
+    """Engine 8: Detect phantom billing red flags.
+
+    Three checks:
+    1. Excessive service density — too many distinct procedures in one day
+    2. Mutually exclusive procedures — conflicting services on the same day
+    3. Time-overlap detection — major surgeries that can't physically overlap
+    """
+    issues = []
+
+    # Build per-date code sets
+    date_codes: dict[str, dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))
+    for idx, item in enumerate(bill.line_items):
+        if not item.cpt_code or item.cpt_code.strip() == "":
+            continue
+        date_codes[item.date_of_service][item.cpt_code].append(idx)
+
+    for date, codes in date_codes.items():
+        # --- Check 1: Excessive service density ---
+        distinct_count = len(codes)
+        if distinct_count > MAX_PROCEDURES_PER_DAY:
+            issues.append(VerificationIssue(
+                issue_type=IssueType.phantom_billing,
+                severity=IssueSeverity.critical,
+                cpt_code="N/A",
+                description=f"Suspicious service density on {date}",
+                details=f"{distinct_count} distinct procedure codes billed on {date}. "
+                        f"Maximum expected for a single patient is {MAX_PROCEDURES_PER_DAY}. "
+                        f"This may indicate phantom charges for services not actually rendered.",
+                potential_overcharge=0,
+            ))
+
+        # --- Check 2: Mutually exclusive procedures ---
+        code_set = set(codes.keys())
+        for code_a, code_b, reason in MUTUALLY_EXCLUSIVE_PROCEDURES:
+            if code_a in code_set and code_b in code_set:
+                idx_b = codes[code_b][0]
+                item_b = bill.line_items[idx_b]
+                issues.append(VerificationIssue(
+                    issue_type=IssueType.phantom_billing,
+                    severity=IssueSeverity.critical,
+                    cpt_code=f"{code_a}/{code_b}",
+                    description=f"Mutually exclusive procedures on {date}",
+                    details=f"{reason}. One of these charges may be phantom — "
+                            f"a service billed but never performed.",
+                    potential_overcharge=item_b.charge_amount * item_b.quantity,
+                    line_item_index=idx_b,
+                ))
+
+        # --- Check 3: Time-overlap detection ---
+        major_procs = [
+            (cpt, codes[cpt][0])
+            for cpt in codes
+            if cpt in PROCEDURE_DURATION_MINUTES
+        ]
+        if len(major_procs) >= 2:
+            total_minutes = sum(
+                PROCEDURE_DURATION_MINUTES[cpt] for cpt, _ in major_procs
+            )
+            # A surgical day realistically caps at ~10 hours (600 min)
+            if total_minutes > 600:
+                proc_names = ", ".join(
+                    f"{cpt} ({PROCEDURE_DURATION_MINUTES[cpt]} min)"
+                    for cpt, _ in major_procs
+                )
+                last_idx = major_procs[-1][1]
+                last_item = bill.line_items[last_idx]
+                issues.append(VerificationIssue(
+                    issue_type=IssueType.phantom_billing,
+                    severity=IssueSeverity.warning,
+                    cpt_code="N/A",
+                    description=f"Impossible surgical schedule on {date}",
+                    details=f"Major procedures totaling {total_minutes} minutes on {date}: "
+                            f"{proc_names}. This exceeds a feasible surgical day (~600 min) "
+                            f"and may indicate a phantom charge.",
+                    potential_overcharge=last_item.charge_amount * last_item.quantity,
+                    line_item_index=last_idx,
                 ))
 
     return issues
