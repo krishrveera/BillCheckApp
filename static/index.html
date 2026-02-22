@@ -1358,7 +1358,7 @@
                 if (report) {
                     text += `Verification is complete. Safety score: ${report.safety_score}. Grade: ${report.grade}. `;
                     text += `${report.issues.length} issues were found. `;
-                    text += `Total amount flagged: ${report.total_flagged.toLocaleString('en-US', {style:'currency',currency:'USD'})}. `;
+                    text += `Total amount flagged: ${totalFlagged.toLocaleString('en-US', {style:'currency',currency:'USD'})}. `;
                 }
                 const utt = new SpeechSynthesisUtterance(text);
                 utt.rate = 0.88;
@@ -1554,6 +1554,8 @@
             const criticalCount = report ? report.issues.filter(i => i.severity === 'critical').length : 0;
             const warningCount  = report ? report.issues.filter(i => i.severity === 'warning').length  : 0;
             const flaggedIndices = report ? new Set(report.issues.map(i => i.line_item_index).filter(i => i !== null)) : new Set();
+            // Derived directly from issues so it always matches the sum shown in the table
+            const totalFlagged = report ? report.issues.reduce((sum, i) => sum + (i.potential_overcharge || 0), 0) : 0;
 
             return (
                 <div className="container">
@@ -1707,7 +1709,7 @@
                                         </div>
                                         <div className="dash-card">
                                             <div className="label">Amount Flagged</div>
-                                            <div className="value flagged-amount">${report.total_flagged.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                            <div className="value flagged-amount">${totalFlagged.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
                                             <div className="sub">potential overcharges</div>
                                         </div>
                                         <div className="dash-card">
